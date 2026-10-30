@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
+    "useDefineForClassFields": false,
+    "paths": {
+      "@angular-video/core": ["./packages/core/src/index.ts"],
+      "@angular-video/studio": ["./packages/studio/src/index.ts"],
+      "@angular-video/renderer": ["./packages/renderer/src/index.ts"],
+      "@angular-video/cli": ["./packages/cli/src/index.ts"]
+    }
+  }
+}
