@@ -15,7 +15,39 @@ export const videoCompositions: VideoMetadata[] = defineCompositions([
       subhead: 'Deterministic, frame-accurate programmatic video framework with Signals and Directives.',
       themeColor: '#3b82f6',
       badgeText: 'AVE 1.0 Release'
-    }
+    },
+    tracks: [
+      {
+        id: 'track-seq-badge',
+        name: 'Badge Reveal',
+        type: 'overlay',
+        items: [{ id: 'badge', from: 10, duration: 170, component: AppDemoSceneComponent }]
+      },
+      {
+        id: 'track-seq-headline',
+        name: 'Headline',
+        type: 'overlay',
+        items: [{ id: 'headline', from: 20, duration: 160, component: AppDemoSceneComponent }]
+      },
+      {
+        id: 'track-seq-subhead',
+        name: 'Subheadline',
+        type: 'overlay',
+        items: [{ id: 'subhead', from: 35, duration: 145, component: AppDemoSceneComponent }]
+      },
+      {
+        id: 'track-seq-cards',
+        name: 'Features Grid',
+        type: 'video',
+        items: [{ id: 'cards', from: 50, duration: 130, component: AppDemoSceneComponent }]
+      },
+      {
+        id: 'track-asset-audio',
+        name: 'Ambient Soundtrack',
+        type: 'audio',
+        items: [{ from: 0, duration: 180, src: 'assets/audio/ambient.mp3', volume: 0.5 }]
+      }
+    ]
   },
   {
     id: 'SocialStory',

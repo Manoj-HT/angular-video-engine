@@ -3,6 +3,7 @@ import { RootFrameService, VideoMetadata, VideoConfig } from '@angular-video/cor
 
 export type ZoomMode = 'fit' | 0.25 | 0.5 | 0.75 | 1.0 | 1.5 | 2.0;
 export type DrawerSide = 'right' | 'left';
+export type TimelineFilter = 'all' | 'sequences' | 'assets' | 'none';
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +32,29 @@ export class StudioStateService {
   readonly isMuted = signal<boolean>(false);
   readonly loop = signal<boolean>(true);
   readonly showCheckerboard = signal<boolean>(true);
+
+  // Timeline Tracks Filter & Drawer State
+  readonly timelineFilter = signal<TimelineFilter>('all');
+  private lastActiveTimelineFilter: 'all' | 'sequences' | 'assets' = 'all';
+
+  readonly isTimelineExpanded = computed<boolean>(() => {
+    return this.timelineFilter() !== 'none';
+  });
+
+  setTimelineFilter(filter: TimelineFilter): void {
+    if (filter !== 'none') {
+      this.lastActiveTimelineFilter = filter;
+    }
+    this.timelineFilter.set(filter);
+  }
+
+  toggleTimelineExpand(): void {
+    if (this.timelineFilter() === 'none') {
+      this.timelineFilter.set(this.lastActiveTimelineFilter);
+    } else {
+      this.timelineFilter.set('none');
+    }
+  }
 
   // Internal playback loop
   private animFrameId: number | null = null;

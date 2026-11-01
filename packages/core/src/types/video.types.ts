@@ -16,6 +16,8 @@ export interface VideoMetadata<TProps = any> {
   width: number;
   height: number;
   defaultProps?: TProps;
+  storyboard?: StoryboardConfig;
+  tracks?: TrackConfig[];
 }
 
 export type TrackType = 'video' | 'overlay' | 'audio';
