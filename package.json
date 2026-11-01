@@ -2,21 +2,36 @@
   "name": "angular-video-engine-monorepo",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
+    "studio": "vite",
+    "dev": "vite",
     "build": "npm run --workspaces --if-present build",
     "test": "npm run --workspaces --if-present test"
   },
   "devDependencies": {
+    "@analogjs/vite-plugin-angular": "^2.9.4",
+    "@angular/build": "^22.2.5",
     "@angular/common": "^22.2.4",
+    "@angular/compiler": "^22.2.4",
+    "@angular/compiler-cli": "^22.2.4",
     "@angular/core": "^22.2.4",
+    "@angular/forms": "^22.2.4",
+    "@angular/platform-browser": "^22.2.4",
+    "@angular/router": "^22.2.4",
     "@types/node": "^26.6.6",
     "rxjs": "^7.8.2",
     "tslib": "^2.8.1",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.5",
     "zone.js": "^0.16.3"
+  },
+  "dependencies": {
+    "gifuct-js": "^2.1.2",
+    "lottie-web": "^5.13.0"
   }
 }

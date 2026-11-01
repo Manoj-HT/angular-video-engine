@@ -7,7 +7,7 @@ export interface VideoConfig {
   durationInFrames: number;
 }
 
-export interface VideoMetadata<TProps = Record<string, unknown>> {
+export interface VideoMetadata<TProps = any> {
   id: string;
   title?: string;
   component: Type<unknown>;
