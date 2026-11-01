@@ -9,6 +9,8 @@
   "scripts": {
     "studio": "vite",
     "dev": "vite",
+    "render": "tsx packages/cli/src/bin/ave.ts render",
+    "still": "tsx packages/cli/src/bin/ave.ts still",
     "build": "npm run --workspaces --if-present build",
     "test": "npm run --workspaces --if-present test"
   },
@@ -23,6 +25,7 @@
     "@angular/platform-browser": "^22.2.4",
     "@angular/router": "^22.2.4",
     "@types/node": "^26.6.6",
+    "playwright": "^1.64.1",
     "rxjs": "^7.8.2",
     "tslib": "^2.8.1",
     "tsx": "^4.23.15",
