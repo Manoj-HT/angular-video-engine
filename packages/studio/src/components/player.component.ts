@@ -93,7 +93,7 @@ export class AvePlayerComponent implements OnInit, OnChanges {
 
   private setupComposition(): void {
     this.state.setCompositions([this.composition]);
-    this.state.loop.set(this.loop);
+    this.state.isLoopEnabled.set(this.loop);
     if (this.autoPlay) {
       this.state.play();
     }

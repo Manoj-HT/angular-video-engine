@@ -41,7 +41,47 @@ import { StudioStateService, ZoomMode } from '../services/studio-state.service';
         </button>
       </div>
 
-      <!-- Center: Frame & Timecode Readout -->
+      <!-- Center-Left: Loop & In/Out Range Controls -->
+      <div class="ave-transport-group ave-loop-group">
+        <button
+          class="ave-btn ave-btn-loop"
+          [class.ave-btn-active]="state.isLoopEnabled()"
+          (click)="state.toggleLoop()"
+          [title]="state.isLoopEnabled() ? 'Looping Enabled (Click to Disable)' : 'Looping Disabled (Click to Enable)'"
+        >
+          🔁
+        </button>
+
+        <button
+          class="ave-btn ave-btn-subtle"
+          (click)="state.setLoopStartAtCurrent()"
+          title="Set Loop Start [ at current frame (Key: I)"
+        >
+          [ In
+        </button>
+
+        <button
+          class="ave-btn ave-btn-subtle"
+          (click)="state.setLoopEndAtCurrent()"
+          title="Set Loop End ] at current frame (Key: O)"
+        >
+          Out ]
+        </button>
+
+        <button
+          class="ave-btn ave-btn-subtle ave-btn-icon"
+          (click)="state.resetLoop()"
+          title="Reset Loop to Video Bounds (Key: Alt+X)"
+        >
+          ↺
+        </button>
+
+        <span class="ave-loop-badge" [title]="'Active loop range: ' + state.loopRangeLabel()">
+          {{ state.loopRangeLabel() }}
+        </span>
+      </div>
+
+      <!-- Center-Right: Frame & Timecode Readout -->
       <div class="ave-transport-group ave-time-group">
         <span class="ave-timecode">{{ formattedTimecode() }}</span>
         
@@ -125,7 +165,7 @@ import { StudioStateService, ZoomMode } from '../services/studio-state.service';
       align-items: center;
       justify-content: space-between;
       padding: 0 12px;
-      gap: 12px;
+      gap: 10px;
       font-family: system-ui, -apple-system, sans-serif;
     }
 
@@ -133,6 +173,24 @@ import { StudioStateService, ZoomMode } from '../services/studio-state.service';
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+
+    .ave-loop-group {
+      background: #141522;
+      border: 1px solid #202336;
+      border-radius: 6px;
+      padding: 2px 6px;
+      gap: 4px;
+    }
+
+    .ave-loop-badge {
+      font-family: monospace;
+      font-size: 11px;
+      color: #38bdf8;
+      background: #1e2238;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
     }
 
     .ave-time-group {
@@ -168,6 +226,20 @@ import { StudioStateService, ZoomMode } from '../services/studio-state.service';
       }
     }
 
+    .ave-btn-subtle {
+      background: transparent;
+      border-color: transparent;
+      padding: 4px 6px;
+      font-size: 11px;
+      color: #94a3b8;
+
+      &:hover {
+        background: #24273d;
+        color: #f1f5f9;
+        border-color: #333854;
+      }
+    }
+
     .ave-btn-icon {
       padding: 5px 8px;
       font-size: 13px;
@@ -188,10 +260,17 @@ import { StudioStateService, ZoomMode } from '../services/studio-state.service';
       font-size: 14px;
     }
 
+    .ave-btn-loop {
+      padding: 4px 6px;
+      font-size: 12px;
+      opacity: 0.6;
+    }
+
     .ave-btn-active {
-      background: #4f46e5;
-      border-color: #6366f1;
-      color: #fff;
+      background: #4f46e5 !important;
+      border-color: #6366f1 !important;
+      color: #fff !important;
+      opacity: 1 !important;
     }
 
     .ave-timecode {

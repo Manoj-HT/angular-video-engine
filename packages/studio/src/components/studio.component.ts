@@ -213,6 +213,24 @@ export class AveStudioComponent implements OnInit, OnChanges {
       case 'M':
         this.state.toggleMute();
         break;
+
+      case 'i':
+      case 'I':
+        this.state.setLoopStartAtCurrent();
+        break;
+
+      case 'o':
+      case 'O':
+        this.state.setLoopEndAtCurrent();
+        break;
+
+      case 'x':
+      case 'X':
+        if (e.altKey) {
+          e.preventDefault();
+          this.state.resetLoop();
+        }
+        break;
     }
   }
 }

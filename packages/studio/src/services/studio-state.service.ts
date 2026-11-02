@@ -30,8 +30,26 @@ export class StudioStateService {
   readonly drawerSide = signal<DrawerSide>('right');
   readonly playbackSpeed = signal<number>(1.0);
   readonly isMuted = signal<boolean>(false);
-  readonly loop = signal<boolean>(true);
   readonly showCheckerboard = signal<boolean>(true);
+
+  // Loop & In/Out Range Controls
+  readonly isLoopEnabled = signal<boolean>(true);
+  readonly loopStart = signal<number>(0);
+  readonly loopEnd = signal<number | null>(null);
+
+  readonly effectiveLoopEnd = computed<number>(() => {
+    const comp = this.activeComposition();
+    const maxFrame = comp ? Math.max(0, comp.durationInFrames - 1) : 0;
+    const end = this.loopEnd();
+    if (end === null || end > maxFrame) {
+      return maxFrame;
+    }
+    return Math.max(this.loopStart() + 1, end);
+  });
+
+  readonly loopRangeLabel = computed<string>(() => {
+    return `F${this.loopStart()} – F${this.effectiveLoopEnd()}`;
+  });
 
   // Timeline Tracks Filter & Drawer State
   readonly timelineFilter = signal<TimelineFilter>('all');
@@ -84,8 +102,40 @@ export class StudioStateService {
         durationInFrames: comp.durationInFrames
       });
       this.activeProps.set({ ...(comp.defaultProps ?? {}) });
+      this.resetLoop();
       this.frameService.setFrame(0);
     }
+  }
+
+  toggleLoop(): void {
+    this.isLoopEnabled.set(!this.isLoopEnabled());
+  }
+
+  setLoopStartAtCurrent(): void {
+    const current = this.frameService.frame();
+    const end = this.effectiveLoopEnd();
+    if (current >= end) {
+      this.loopStart.set(Math.max(0, end - 1));
+    } else {
+      this.loopStart.set(current);
+    }
+  }
+
+  setLoopEndAtCurrent(): void {
+    const current = this.frameService.frame();
+    const start = this.loopStart();
+    if (current <= start) {
+      this.loopEnd.set(start + 1);
+    } else {
+      this.loopEnd.set(current);
+    }
+  }
+
+  resetLoop(): void {
+    const comp = this.activeComposition();
+    const max = comp ? Math.max(0, comp.durationInFrames - 1) : 0;
+    this.loopStart.set(0);
+    this.loopEnd.set(max);
   }
 
   updateProp(key: string, value: unknown): void {
@@ -107,9 +157,12 @@ export class StudioStateService {
     const comp = this.activeComposition();
     if (!comp) return;
 
-    // If at the end, wrap to start
-    if (this.frameService.frame() >= comp.durationInFrames - 1) {
-      this.frameService.setFrame(0);
+    const loopStart = this.loopStart();
+    const loopEnd = this.effectiveLoopEnd();
+
+    // If playhead is outside or at the loop boundary, rebase to loop start
+    if (this.frameService.frame() >= loopEnd || this.frameService.frame() < loopStart) {
+      this.frameService.setFrame(loopStart);
     }
 
     this.frameService.setPlaying(true);
@@ -159,19 +212,23 @@ export class StudioStateService {
       const elapsedFrames = Math.floor(elapsedSeconds * comp.fps * speed);
       const targetFrame = this.playbackStartFrame + elapsedFrames;
 
-      if (targetFrame >= comp.durationInFrames) {
-        if (this.loop()) {
-          // Loop around
+      const loopEnd = this.effectiveLoopEnd();
+      const loopStart = this.loopStart();
+
+      if (targetFrame >= loopEnd) {
+        if (this.isLoopEnabled()) {
+          // Loop around to loopStart
           this.playbackStartTime = performance.now();
-          this.playbackStartFrame = 0;
+          this.playbackStartFrame = loopStart;
           this.ngZone.run(() => {
-            this.frameService.setFrame(0);
+            this.frameService.setFrame(loopStart);
           });
           this.animFrameId = requestAnimationFrame(tick);
           return;
         } else {
+          // Stop at loopEnd
           this.ngZone.run(() => {
-            this.frameService.setFrame(comp.durationInFrames - 1);
+            this.frameService.setFrame(loopEnd);
             this.pause();
           });
           return;
@@ -197,6 +254,9 @@ export class StudioStateService {
         height: comp.height,
         durationInFrames: comp.durationInFrames
       });
+      if (this.loopEnd() === null) {
+        this.loopEnd.set(comp.durationInFrames - 1);
+      }
       if (Object.keys(this.activeProps()).length === 0 && comp.defaultProps) {
         this.activeProps.set({ ...comp.defaultProps });
       }

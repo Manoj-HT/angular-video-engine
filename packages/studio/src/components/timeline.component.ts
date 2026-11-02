@@ -111,6 +111,16 @@ interface DisplayTrack {
         >
           <!-- Top Row: Primary Scrubber & Ruler (Starts at exact 0% of timeline) -->
           <div class="ave-lane-ruler-row">
+            <!-- Active Loop Region Band -->
+            <div
+              class="ave-loop-region-band"
+              [style.left.%]="loopStartPercentage()"
+              [style.width.%]="loopWidthPercentage()"
+            >
+              <div class="ave-loop-handle-in" [title]="'Loop In: Frame ' + state.loopStart()">[</div>
+              <div class="ave-loop-handle-out" [title]="'Loop Out: Frame ' + state.effectiveLoopEnd()">]</div>
+            </div>
+
             <!-- Timeline Time Ruler Marks -->
             <div class="ave-timeline-ruler">
               @for (tick of rulerTicks(); track tick.frame) {
@@ -361,6 +371,37 @@ interface DisplayTrack {
       border-bottom: 1px solid #1f2233;
     }
 
+    .ave-loop-region-band {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      background: rgba(56, 189, 248, 0.12);
+      border-left: 2px solid #38bdf8;
+      border-right: 2px solid #38bdf8;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .ave-loop-handle-in,
+    .ave-loop-handle-out {
+      position: absolute;
+      top: 1px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #38bdf8;
+      font-family: monospace;
+      line-height: 1;
+      text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+    }
+
+    .ave-loop-handle-in {
+      left: 2px;
+    }
+
+    .ave-loop-handle-out {
+      right: 2px;
+    }
+
     .ave-timeline-ruler {
       position: absolute;
       top: 0;
@@ -514,6 +555,20 @@ export class AveTimelineComponent {
     const total = this.frameService.config().durationInFrames;
     if (total <= 1) return 0;
     return (frame / (total - 1)) * 100;
+  });
+
+  readonly loopStartPercentage = computed<number>(() => {
+    const total = this.frameService.config().durationInFrames;
+    if (total <= 1) return 0;
+    return (this.state.loopStart() / (total - 1)) * 100;
+  });
+
+  readonly loopWidthPercentage = computed<number>(() => {
+    const total = this.frameService.config().durationInFrames;
+    if (total <= 1) return 100;
+    const start = this.state.loopStart();
+    const end = this.state.effectiveLoopEnd();
+    return Math.max(0.5, ((end - start) / (total - 1)) * 100);
   });
 
   readonly rulerTicks = computed<{ frame: number; percentage: number; label: string }[]>(() => {
