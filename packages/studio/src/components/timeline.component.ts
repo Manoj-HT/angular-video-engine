@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RootFrameService, TrackConfig, TrackItem } from '@angular-video/core';
-import { StudioStateService, TimelineFilter } from '../services/studio-state.service';
+import { StudioStateService } from '../services/studio-state.service';
 
 interface DisplayTrack {
   id: string;
@@ -73,59 +73,69 @@ interface DisplayTrack {
         </div>
       </div>
 
-      <!-- 2. Primary Time Ruler & Scrub Rail -->
-      <div
-        #trackContainer
-        class="ave-timeline-container"
-        (pointerdown)="onPointerDown($event)"
-      >
-        <!-- Timeline Time Ruler -->
-        <div class="ave-timeline-ruler">
-          @for (tick of rulerTicks(); track tick.frame) {
-            <div class="ave-ruler-tick" [style.left.%]="tick.percentage">
-              <span class="ave-tick-label">{{ tick.label }}</span>
+      <!-- 2. Unified Timeline Grid: 180px Header Column + Coordinated Timeline Lane -->
+      <div class="ave-timeline-grid">
+        <!-- Left Column: Headers -->
+        <div class="ave-timeline-headers">
+          <!-- Top Row Header: Master Time / Ruler -->
+          <div class="ave-header-cell ave-header-ruler">
+            <span class="ave-header-title">Master Scrubber</span>
+            <span class="ave-header-frame">F{{ frameService.frame() }}</span>
+          </div>
+
+          <!-- Track Row Headers (When expanded) -->
+          @if (state.isTimelineExpanded()) {
+            <div class="ave-drawer-headers">
+              @for (track of filteredTracks(); track track.id) {
+                <div class="ave-header-cell ave-header-track">
+                  <span class="ave-track-icon">
+                    @switch (track.type) {
+                      @case ('audio') { 🎵 }
+                      @case ('overlay') { 🔤 }
+                      @default { 🎬 }
+                    }
+                  </span>
+                  <span class="ave-track-name" [title]="track.name">{{ track.name }}</span>
+                  <span class="ave-track-type-badge">{{ track.category }}</span>
+                </div>
+              }
             </div>
           }
         </div>
 
-        <!-- Primary Track Background Rail -->
-        <div class="ave-track-rail">
-          <div class="ave-track-progress" [style.width.%]="progressPercentage()"></div>
-        </div>
-
-        <!-- Draggable Playhead Scrubber -->
-        <div class="ave-playhead" [style.left.%]="progressPercentage()">
-          <div class="ave-playhead-cap"></div>
-          <div class="ave-playhead-line" [style.height.px]="playheadLineHeight()"></div>
-        </div>
-      </div>
-
-      <!-- 3. Expandable Multi-Track Drawer (Visible when filter is NOT 'none') -->
-      @if (state.isTimelineExpanded()) {
-        <div class="ave-tracks-drawer">
-          @if (filteredTracks().length === 0) {
-            <div class="ave-tracks-empty">
-              No {{ state.timelineFilter() }} found in this composition.
+        <!-- Right Column: Unified Timeline Lane -->
+        <div
+          #laneContainer
+          class="ave-timeline-lane"
+          (pointerdown)="onPointerDown($event)"
+        >
+          <!-- Top Row: Primary Scrubber & Ruler (Starts at exact 0% of timeline) -->
+          <div class="ave-lane-ruler-row">
+            <!-- Timeline Time Ruler Marks -->
+            <div class="ave-timeline-ruler">
+              @for (tick of rulerTicks(); track tick.frame) {
+                <div class="ave-ruler-tick" [style.left.%]="tick.percentage">
+                  <span class="ave-tick-label">{{ tick.label }}</span>
+                </div>
+              }
             </div>
-          } @else {
-            <div class="ave-tracks-list">
-              @for (track of filteredTracks(); track track.id) {
-                <div class="ave-track-row">
-                  <!-- Track Header on the Left -->
-                  <div class="ave-track-header">
-                    <span class="ave-track-icon">
-                      @switch (track.type) {
-                        @case ('audio') { 🎵 }
-                        @case ('overlay') { 🔤 }
-                        @default { 🎬 }
-                      }
-                    </span>
-                    <span class="ave-track-name" [title]="track.name">{{ track.name }}</span>
-                    <span class="ave-track-type-badge">{{ track.category }}</span>
-                  </div>
 
-                  <!-- Track Lane on the Right -->
-                  <div class="ave-track-lane" (pointerdown)="onPointerDown($event)">
+            <!-- Primary Progress Track Rail -->
+            <div class="ave-track-rail">
+              <div class="ave-track-progress" [style.width.%]="progressPercentage()"></div>
+            </div>
+          </div>
+
+          <!-- Multi-Track Drawer Lanes (When expanded) -->
+          @if (state.isTimelineExpanded()) {
+            <div class="ave-drawer-lanes">
+              @if (filteredTracks().length === 0) {
+                <div class="ave-tracks-empty">
+                  No {{ state.timelineFilter() }} found in this composition.
+                </div>
+              } @else {
+                @for (track of filteredTracks(); track track.id) {
+                  <div class="ave-track-lane-row">
                     @for (item of track.items; track item.id || item.from) {
                       <div
                         class="ave-clip-bar"
@@ -140,12 +150,21 @@ interface DisplayTrack {
                       </div>
                     }
                   </div>
-                </div>
+                }
               }
             </div>
           }
+
+          <!-- Global Playhead Scrubber: Starts at 0% of timeline lane and cuts vertically across all tracks -->
+          <div
+            class="ave-playhead"
+            [style.left.%]="progressPercentage()"
+          >
+            <div class="ave-playhead-cap"></div>
+            <div class="ave-playhead-line"></div>
+          </div>
         </div>
-      }
+      </div>
     </div>
   `,
   styles: [`
@@ -246,128 +265,58 @@ interface DisplayTrack {
       }
     }
 
-    /* 2. Primary Scrubber Rail */
-    .ave-timeline-container {
+    /* 2. Unified Timeline Grid */
+    .ave-timeline-grid {
+      display: flex;
       width: 100%;
-      height: 44px;
-      position: relative;
       background: #12131d;
-      border-bottom: 1px solid #1f2233;
-      cursor: pointer;
-      touch-action: none;
     }
 
-    .ave-timeline-ruler {
-      position: absolute;
-      top: 0;
-      left: 180px; /* Offset matching track headers */
-      right: 0;
-      height: 18px;
-      pointer-events: none;
-      overflow: hidden;
-    }
-
-    .ave-ruler-tick {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      border-left: 1px solid #2d314a;
-    }
-
-    .ave-tick-label {
-      position: absolute;
-      top: 2px;
-      left: 4px;
-      font-size: 9px;
-      font-family: monospace;
-      color: #64748b;
-    }
-
-    .ave-track-rail {
-      position: absolute;
-      top: 22px;
-      left: 180px; /* Offset matching track headers */
-      right: 0;
-      height: 8px;
-      background: #1c1e2d;
-      border-radius: 4px;
-      overflow: hidden;
-      margin-right: 8px;
-    }
-
-    .ave-track-progress {
-      height: 100%;
-      background: linear-gradient(90deg, #3b82f6, #6366f1);
-      border-radius: 4px;
-    }
-
-    .ave-playhead {
-      position: absolute;
-      top: 0;
-      left: 180px;
-      transform: translateX(-50%);
-      pointer-events: none;
-      z-index: 50;
-    }
-
-    .ave-playhead-cap {
-      width: 12px;
-      height: 12px;
-      background: #ef4444;
-      clip-path: polygon(0% 0%, 100% 0%, 100% 60%, 50% 100%, 0% 60%);
-      margin: 0 auto;
-      box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
-    }
-
-    .ave-playhead-line {
-      width: 2px;
-      background: #ef4444;
-      margin: 0 auto;
-    }
-
-    /* 3. Expandable Multi-Track Drawer */
-    .ave-tracks-drawer {
-      max-height: 180px;
-      overflow-y: auto;
-      background: #0d0e15;
-      border-bottom: 1px solid #1a1c2a;
-    }
-
-    .ave-tracks-empty {
-      padding: 20px;
-      text-align: center;
-      color: #64748b;
-      font-size: 12px;
-      font-style: italic;
-    }
-
-    .ave-tracks-list {
+    /* Left Column: Headers */
+    .ave-timeline-headers {
+      width: 180px;
+      flex-shrink: 0;
+      background: #11121c;
+      border-right: 1px solid #1d2030;
       display: flex;
       flex-direction: column;
     }
 
-    .ave-track-row {
+    .ave-header-cell {
+      height: 44px;
+      padding: 0 12px;
       display: flex;
-      height: 36px;
-      border-bottom: 1px solid #161825;
       align-items: center;
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.02);
-      }
+      justify-content: space-between;
+      border-bottom: 1px solid #1f2233;
+      font-size: 11px;
+      color: #94a3b8;
     }
 
-    .ave-track-header {
-      width: 180px;
-      flex-shrink: 0;
-      height: 100%;
-      padding: 0 10px;
+    .ave-header-ruler {
+      font-weight: 600;
+      color: #cbd5e1;
+      background: #131420;
+    }
+
+    .ave-header-frame {
+      font-family: monospace;
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    .ave-drawer-headers {
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      max-height: 180px;
+      overflow-y: hidden;
+    }
+
+    .ave-header-track {
+      height: 36px;
+      border-bottom: 1px solid #161825;
       gap: 6px;
-      background: #11121c;
-      border-right: 1px solid #1d2030;
-      overflow: hidden;
+      justify-content: flex-start;
     }
 
     .ave-track-icon {
@@ -394,11 +343,90 @@ interface DisplayTrack {
       font-weight: 600;
     }
 
-    .ave-track-lane {
+    /* Right Column: Unified Timeline Lane */
+    .ave-timeline-lane {
       flex: 1;
-      height: 100%;
+      min-width: 0;
       position: relative;
       cursor: pointer;
+      touch-action: none;
+      display: flex;
+      flex-direction: column;
+      background: #12131d;
+    }
+
+    .ave-lane-ruler-row {
+      height: 44px;
+      position: relative;
+      border-bottom: 1px solid #1f2233;
+    }
+
+    .ave-timeline-ruler {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 18px;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .ave-ruler-tick {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      border-left: 1px solid #2d314a;
+    }
+
+    .ave-tick-label {
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      font-size: 9px;
+      font-family: monospace;
+      color: #64748b;
+    }
+
+    .ave-track-rail {
+      position: absolute;
+      top: 22px;
+      left: 0;
+      right: 12px;
+      height: 8px;
+      background: #1c1e2d;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .ave-track-progress {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #6366f1);
+      border-radius: 4px;
+    }
+
+    .ave-drawer-lanes {
+      display: flex;
+      flex-direction: column;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .ave-tracks-empty {
+      padding: 16px;
+      color: #64748b;
+      font-size: 11px;
+      font-style: italic;
+    }
+
+    .ave-track-lane-row {
+      height: 36px;
+      position: relative;
+      border-bottom: 1px solid #161825;
+      margin-right: 12px;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.02);
+      }
     }
 
     .ave-clip-bar {
@@ -443,10 +471,38 @@ interface DisplayTrack {
       color: rgba(255, 255, 255, 0.8);
       margin-left: 6px;
     }
+
+    /* Unified Playhead: 0% is the exact beginning of the timeline lane */
+    .ave-playhead {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .ave-playhead-cap {
+      width: 12px;
+      height: 12px;
+      background: #ef4444;
+      clip-path: polygon(0% 0%, 100% 0%, 100% 60%, 50% 100%, 0% 60%);
+      flex-shrink: 0;
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+    }
+
+    .ave-playhead-line {
+      width: 2px;
+      flex: 1;
+      background: #ef4444;
+    }
   `]
 })
 export class AveTimelineComponent {
-  @ViewChild('trackContainer', { static: true }) trackRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('laneContainer', { static: true }) laneRef!: ElementRef<HTMLDivElement>;
 
   protected frameService = inject(RootFrameService);
   protected state = inject(StudioStateService);
@@ -458,14 +514,6 @@ export class AveTimelineComponent {
     const total = this.frameService.config().durationInFrames;
     if (total <= 1) return 0;
     return (frame / (total - 1)) * 100;
-  });
-
-  readonly playheadLineHeight = computed<number>(() => {
-    if (!this.state.isTimelineExpanded()) {
-      return 44;
-    }
-    const count = this.filteredTracks().length;
-    return 44 + Math.min(180, count * 36);
   });
 
   readonly rulerTicks = computed<{ frame: number; percentage: number; label: string }[]>(() => {
@@ -558,7 +606,7 @@ export class AveTimelineComponent {
     if (this.isDragging) {
       this.isDragging = false;
       try {
-        this.trackRef.nativeElement.releasePointerCapture(e.pointerId);
+        this.laneRef.nativeElement.releasePointerCapture(e.pointerId);
       } catch {
         // Ignored
       }
@@ -566,15 +614,13 @@ export class AveTimelineComponent {
   }
 
   private seekFromPointer(e: PointerEvent): void {
-    const rect = this.trackRef.nativeElement.getBoundingClientRect();
-    // Offset for track headers (180px)
-    const headerOffset = 180;
-    const laneWidth = rect.width - headerOffset;
-    if (laneWidth <= 0) return;
+    const rect = this.laneRef.nativeElement.getBoundingClientRect();
+    if (rect.width <= 0) return;
 
-    const relativeX = e.clientX - rect.left - headerOffset;
-    const clampedX = Math.max(0, Math.min(relativeX, laneWidth));
-    const ratio = clampedX / laneWidth;
+    // Directly relative to the timeline lane: 0px is 0%, rect.width is 100%
+    const relativeX = e.clientX - rect.left;
+    const clampedX = Math.max(0, Math.min(relativeX, rect.width));
+    const ratio = clampedX / rect.width;
 
     const total = this.frameService.config().durationInFrames;
     const targetFrame = Math.round(ratio * (total - 1));
