@@ -96,3 +96,34 @@ When a composition or track clip is selected, the Inspector Drawer dynamically r
 1. **Transform Tools:** Direct inputs for position $(X, Y)$, scale, rotation, and opacity.
 2. **Style & Easing Tool:** Color pickers, padding/margin sliders, and visual Bezier easing curve selectors.
 3. **Schema-Driven Prop Form:** Automatically generates text inputs, toggles, and dropdowns based on the component's `defaultProps`.
+
+---
+
+## 7. Remote Clean Feed & Presentation / POC Mode
+
+Remotion Studio provides only an in-tab fullscreen toggle for the canvas, forcing presenters to mirror their entire display.
+
+**AVE introduces a First-Class Remote Clean Feed (`?mode=presentation`):**
+
+```
+┌─────────────────────────────────────────────────┐       ┌───────────────────────────────────────────────┐
+│              STUDIO HOST WORKBENCH              │       │          REMOTE CLEAN FEED / POC MODE         │
+│  (Operator Screen: Full Scrubber & Inspector)   │       │     (2nd Monitor, Projector, or Remote TV)    │
+│                                                 │  WS   │                                               │
+│  [▶] [⏮] [F 44] [Loop In/Out] [Inspector Tools] │──────►│  [ PURE EDGE-TO-EDGE CANVAS ONLY ]            │
+│  Audio Route: [🔊 Studio] / [🖥️ Remote / TV]   │       │  [Auto-Hiding Pill: ● Live Synced | F44 | 🔊] │
+└─────────────────────────────────────────────────┘       └───────────────────────────────────────────────┘
+```
+
+### Key Capabilities:
+1. **Dual-Screen Reference Window:** Click `[ 🖥️ Clean Feed ] -> Pop-out Clean Feed Window` in the header to open a chrome-less reference monitor (ideal for multi-monitor setups or projector rigs).
+2. **Cross-Device Enterprise POC:** Click `Copy Remote Presentation Link` (`/?mode=presentation&id=<composition>`) to review on a remote TV or executive computer.
+3. **Real-Time WebSocket Synchronization (`/ave-sync`):**
+   - Playhead scrubbing, pause, play, loop regions, active composition, and schema props reflect instantly across all screens.
+   - Instant connection handshake: New clients immediately receive the server's authoritative session state snapshot.
+   - Clean termination: When a viewer window or tab is closed, the host studio updates its live viewers count in real time.
+4. **Audio Echo Guard:** When presenting on a TV or second screen, simultaneous audio playback causes unpleasant acoustic echo. AVE features an explicit audio destination router:
+   - `Studio Tab`: Audio plays solely on the operator's laptop/studio tab; remote clean feeds are muted.
+   - `Remote / TV`: Audio outputs directly to the presentation display/TV; operator studio audio is muted.
+5. **Auto-Hiding HUD:** Displays connection status (`● Live Synced`), current frame number, and audio route status. Fades to black after 3 seconds of cursor inactivity for an immaculate reference presentation.
+6. **In-Tab Fullscreen vs. Remote Clean Feed:** In addition to Clean Feed mode, the transport bar retains a dedicated in-tab `⛶` button for quick single-monitor canvas fullscreen.

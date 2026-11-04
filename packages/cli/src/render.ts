@@ -48,7 +48,7 @@ export async function renderVideo(options: RenderOptions): Promise<string> {
 
   // 2. Load Headless Render Mode
   const url = `http://localhost:${port}/?mode=render&id=${compositionId}`;
-  await page.goto(url, { waitUntil: 'networkidle' });
+  await page.goto(url, { waitUntil: 'load' });
 
   // 3. Inspect Metadata from Engine Bridge
   await page.waitForFunction(() => typeof (window as any).__AVE_GET_METADATA === 'function');
@@ -63,7 +63,7 @@ export async function renderVideo(options: RenderOptions): Promise<string> {
   });
 
   // 4. Wait for Asset Gate to be Ready
-  await page.waitForFunction(() => (window as any).__AVE_IS_READY() === true);
+  await page.waitForFunction(() => typeof (window as any).__AVE_IS_READY === 'function' && (window as any).__AVE_IS_READY() === true);
 
   // 5. Spawn Native FFmpeg with Direct stdin Memory Pipe
   const ffmpegArgs = [
@@ -157,7 +157,7 @@ export async function captureStill(options: StillOptions): Promise<string> {
   const page = await browser.newPage();
 
   const url = `http://localhost:${port}/?mode=render&id=${compositionId}`;
-  await page.goto(url, { waitUntil: 'networkidle' });
+  await page.goto(url, { waitUntil: 'load' });
 
   await page.waitForFunction(() => typeof (window as any).__AVE_GET_METADATA === 'function');
   const metadata = await page.evaluate(() => (window as any).__AVE_GET_METADATA());
@@ -167,7 +167,7 @@ export async function captureStill(options: StillOptions): Promise<string> {
     height: metadata.height
   });
 
-  await page.waitForFunction(() => (window as any).__AVE_IS_READY() === true);
+  await page.waitForFunction(() => typeof (window as any).__AVE_IS_READY === 'function' && (window as any).__AVE_IS_READY() === true);
 
   // Seek and capture
   await page.evaluate((f) => (window as any).__AVE_SEEK_FRAME(f), frame);

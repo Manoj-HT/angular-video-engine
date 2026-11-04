@@ -1,13 +1,13 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AveStudioComponent } from '@angular-video/studio';
+import { AveStudioComponent, AveCleanFeedComponent, StudioStateService } from '@angular-video/studio';
 import { RootFrameService, AssetGateService } from '@angular-video/core';
 import { videoCompositions } from './videos';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, AveStudioComponent],
+  imports: [CommonModule, AveStudioComponent, AveCleanFeedComponent],
   template: `
     @if (isRenderMode) {
       <!-- Headless Isolated Render Stage (Zero Chrome) -->
@@ -26,6 +26,9 @@ import { videoCompositions } from './videos';
           />
         </div>
       }
+    } @else if (isPresentationMode) {
+      <!-- Remote Clean Feed Presentation / POC Mode -->
+      <ave-clean-feed [compositions]="compositions" />
     } @else {
       <!-- Full Interactive Studio Workbench -->
       <ave-studio
@@ -47,15 +50,19 @@ import { videoCompositions } from './videos';
 export class AppComponent implements OnInit {
   protected frameService = inject(RootFrameService);
   protected assetGate = inject(AssetGateService);
+  protected studioState = inject(StudioStateService);
 
   readonly compositions = videoCompositions;
 
   isRenderMode = false;
+  isPresentationMode = false;
   activeRenderComp = videoCompositions[0];
 
   ngOnInit(): void {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('mode') === 'render') {
+    const mode = params.get('mode');
+
+    if (mode === 'render') {
       this.isRenderMode = true;
       const targetId = params.get('id');
       const comp = this.compositions.find(c => c.id === targetId) ?? this.compositions[0];
@@ -84,6 +91,13 @@ export class AppComponent implements OnInit {
       });
 
       (window as any).__AVE_IS_READY = () => this.assetGate.isReady();
+    } else if (mode === 'presentation' || mode === 'poc') {
+      this.isPresentationMode = true;
+      this.studioState.setCompositions(this.compositions);
+      const targetId = params.get('id');
+      if (targetId) {
+        this.studioState.selectComposition(targetId);
+      }
     }
   }
 

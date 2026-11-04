@@ -1,5 +1,6 @@
 // Services
 export * from './services/studio-state.service';
+export * from './services/presentation-sync.service';
 
 // Components
 export * from './components/studio.component';
@@ -9,3 +10,4 @@ export * from './components/timeline.component';
 export * from './components/transport-bar.component';
 export * from './components/inspector.component';
 export * from './components/studio-header.component';
+export * from './components/clean-feed.component';

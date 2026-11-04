@@ -137,6 +137,15 @@ import { StudioStateService, ZoomMode } from '../services/studio-state.service';
           {{ state.isMuted() ? '🔇' : '🔊' }}
         </button>
 
+        <!-- In-Tab Fullscreen -->
+        <button
+          class="ave-btn ave-btn-icon"
+          (click)="toggleInTabFullscreen()"
+          title="Toggle Canvas Fullscreen"
+        >
+          ⛶
+        </button>
+
         <!-- Tools / Inspector Toggle Button -->
         <button
           class="ave-btn"
@@ -391,6 +400,16 @@ export class AveTransportBarComponent {
       if (!isNaN(num)) {
         this.state.zoomMode.set(num as ZoomMode);
       }
+    }
+  }
+
+  toggleInTabFullscreen(): void {
+    const stage = document.querySelector('.ave-stage-viewport');
+    if (!stage) return;
+    if (!document.fullscreenElement) {
+      stage.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
     }
   }
 }

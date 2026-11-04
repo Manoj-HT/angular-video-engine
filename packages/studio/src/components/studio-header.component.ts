@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StudioStateService } from '../services/studio-state.service';
+import { PresentationSyncService, AudioDestination } from '../services/presentation-sync.service';
 
 @Component({
   selector: 'ave-studio-header',
@@ -44,8 +45,64 @@ import { StudioStateService } from '../services/studio-state.service';
         </div>
       </div>
 
-      <!-- Right: Action Buttons (Quick Export, GitHub link) -->
+      <!-- Right: Presentation Clean Feed & Export -->
       <div class="ave-header-right">
+        <!-- Clean Feed Pop-out & Remote POC Menu -->
+        <div class="ave-clean-feed-menu-wrapper">
+          <button
+            class="ave-clean-feed-btn"
+            [class.active]="sync.viewersCount() > 0"
+            (click)="toggleCleanFeedMenu()"
+            title="Clean Feed Presentation Mode"
+          >
+            <span class="ave-clean-feed-dot" [class.live]="sync.viewersCount() > 0"></span>
+            <span>🖥️ Clean Feed</span>
+            @if (sync.viewersCount() > 0) {
+              <span class="ave-viewers-badge">{{ sync.viewersCount() }}</span>
+            }
+          </button>
+
+          @if (isCleanFeedMenuOpen()) {
+            <div class="ave-clean-feed-dropdown">
+              <div class="ave-dropdown-header">Remote Presentation & POC</div>
+
+              <button class="ave-dropdown-action-btn" (click)="openPopup()">
+                <div class="ave-action-title">🪟 Pop-out Clean Feed Window</div>
+                <div class="ave-action-sub">Opens borderless reference window for 2nd monitor</div>
+              </button>
+
+              <button class="ave-dropdown-action-btn" (click)="copyShareLink()">
+                <div class="ave-action-title">
+                  {{ copiedSuccess() ? '✅ Link Copied to Clipboard!' : '🔗 Copy Remote Presentation Link' }}
+                </div>
+                <div class="ave-action-sub">Viewers on other devices stay live in sync</div>
+              </button>
+
+              <div class="ave-dropdown-divider"></div>
+
+              <div class="ave-audio-routing-box">
+                <span class="ave-audio-routing-label">Audio Output Destination:</span>
+                <div class="ave-audio-toggle-group">
+                  <button
+                    class="ave-audio-toggle-btn"
+                    [class.active]="sync.audioDestination() === 'studio'"
+                    (click)="setAudio('studio')"
+                  >
+                    🔊 Studio Tab
+                  </button>
+                  <button
+                    class="ave-audio-toggle-btn"
+                    [class.active]="sync.audioDestination() === 'remote'"
+                    (click)="setAudio('remote')"
+                  >
+                    🖥️ Remote / TV
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
         <button class="ave-export-btn" (click)="onExportClick()">
           ⚡ Quick Export
         </button>
@@ -203,6 +260,148 @@ import { StudioStateService } from '../services/studio-state.service';
       gap: 12px;
     }
 
+    /* Clean Feed Menu */
+    .ave-clean-feed-menu-wrapper {
+      position: relative;
+    }
+
+    .ave-clean-feed-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #181926;
+      border: 1px solid #282a3e;
+      color: #cbd5e1;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #222538;
+        border-color: #3c4263;
+        color: #fff;
+      }
+
+      &.active {
+        border-color: #10b981;
+        color: #fff;
+      }
+    }
+
+    .ave-clean-feed-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #64748b;
+
+      &.live {
+        background: #10b981;
+        box-shadow: 0 0 6px #10b981;
+      }
+    }
+
+    .ave-viewers-badge {
+      background: #10b981;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 999px;
+    }
+
+    .ave-clean-feed-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 290px;
+      background: #161722;
+      border: 1px solid #282a3e;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      z-index: 50;
+      overflow: hidden;
+      padding-bottom: 8px;
+    }
+
+    .ave-dropdown-action-btn {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: none;
+      padding: 10px 14px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+
+      &:hover {
+        background: #202336;
+      }
+    }
+
+    .ave-action-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .ave-action-sub {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .ave-dropdown-divider {
+      height: 1px;
+      background: #232537;
+      margin: 6px 0;
+    }
+
+    .ave-audio-routing-box {
+      padding: 6px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .ave-audio-routing-label {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .ave-audio-toggle-group {
+      display: flex;
+      gap: 4px;
+      background: #10111a;
+      padding: 2px;
+      border-radius: 6px;
+      border: 1px solid #25283c;
+    }
+
+    .ave-audio-toggle-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 11px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+
+      &:hover {
+        color: #fff;
+      }
+
+      &.active {
+        background: #3b82f6;
+        color: #fff;
+        font-weight: 600;
+      }
+    }
+
     .ave-export-btn {
       background: linear-gradient(135deg, #3b82f6, #6366f1);
       color: #fff;
@@ -229,17 +428,45 @@ import { StudioStateService } from '../services/studio-state.service';
 })
 export class AveStudioHeaderComponent {
   protected state = inject(StudioStateService);
+  protected sync = inject(PresentationSyncService);
+
   protected isDropdownOpen = signal(false);
+  protected isCleanFeedMenuOpen = signal(false);
+  protected copiedSuccess = signal(false);
 
   @Output() exportClick = new EventEmitter<void>();
 
   toggleDropdown(): void {
     this.isDropdownOpen.set(!this.isDropdownOpen());
+    if (this.isDropdownOpen()) this.isCleanFeedMenuOpen.set(false);
+  }
+
+  toggleCleanFeedMenu(): void {
+    this.isCleanFeedMenuOpen.set(!this.isCleanFeedMenuOpen());
+    if (this.isCleanFeedMenuOpen()) this.isDropdownOpen.set(false);
   }
 
   selectComposition(id: string): void {
     this.state.selectComposition(id);
+    this.sync.broadcastComposition(id);
     this.isDropdownOpen.set(false);
+  }
+
+  openPopup(): void {
+    this.sync.openPopupCleanFeed();
+    this.isCleanFeedMenuOpen.set(false);
+  }
+
+  async copyShareLink(): Promise<void> {
+    const success = await this.sync.copyPresentationUrl();
+    if (success) {
+      this.copiedSuccess.set(true);
+      setTimeout(() => this.copiedSuccess.set(false), 2500);
+    }
+  }
+
+  setAudio(dest: AudioDestination): void {
+    this.sync.setAudioDestination(dest);
   }
 
   onExportClick(): void {
