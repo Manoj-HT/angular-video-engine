@@ -74,6 +74,26 @@ export class StudioStateService {
     }
   }
 
+  // Timeline Zoom Level (1.0 = Fit, up to 10.0x)
+  readonly timelineZoom = signal<number>(1.0);
+
+  setTimelineZoom(zoom: number): void {
+    const clamped = Math.max(1.0, Math.min(10.0, zoom));
+    this.timelineZoom.set(Number(clamped.toFixed(2)));
+  }
+
+  zoomInTimeline(delta = 0.5): void {
+    this.setTimelineZoom(this.timelineZoom() + delta);
+  }
+
+  zoomOutTimeline(delta = 0.5): void {
+    this.setTimelineZoom(this.timelineZoom() - delta);
+  }
+
+  resetTimelineZoom(): void {
+    this.timelineZoom.set(1.0);
+  }
+
   // Internal playback loop
   private animFrameId: number | null = null;
   private playbackStartTime = 0;

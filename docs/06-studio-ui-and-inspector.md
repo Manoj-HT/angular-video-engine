@@ -65,6 +65,34 @@ Located directly adjacent to the timeline scrubber:
 
 ---
 
+## 4.1. Timeline Zoom & Virtual Content Canvas
+
+AVE features professional non-linear editor (NLE) timeline zooming and panning:
+
+```
+┌──────────────────┬──────────────────────────────────────────────────────────────────┐
+│ Pinned 180px Col │  Scrollable Viewport (overflow-x: auto)                          │
+│                  │  ◄───────────────── Virtual Width: 4,880px (4x) ───────────────► │
+│ [Master Scrubber]│  [ Ruler Ticks: 0s  0.5s  1.0s  1.5s  2.0s ... 21s ]             │
+│ [Track: Video 1 ]│  [ Clip A (0s–5s) ]          [ Clip B (5s–21s) ]                 │
+│ [Track: Audio 1 ]│  [ Audio Track                                 ]                 │
+└──────────────────┴──────────────────────────────────────────────────────────────────┘
+```
+
+### Key Capabilities:
+1. **Virtual Content Expansion:** Zoom scale ranges from `1.0x` (Fit entire video to viewport width) up to `10.0x` (frame-level precision). For a 21-second video, `4x` zoom renders a ~5-second window inside the viewport.
+2. **Pinned 180px Track Headers:** The left column containing track names, sequence icons, and master time readout remains fixed while the timeline lane scrolls horizontally.
+3. **Playhead & Mouse Anchor Zooming:**
+   - Zooming via toolbar buttons (`+`, `−`, slider, or presets `Fit`, `2x`, `4x`, `8x`) anchors on the current playhead, keeping it centered in the visible viewport.
+   - Zooming via `Alt + MouseWheel` (or trackpad pinch) anchors directly under the mouse cursor.
+4. **Adaptive Ruler Ticks (LOD):**
+   - Automatically recalibrates tick density based on zoom factor ($1.0\text{s}$ at $2\text{x}$, $0.5\text{s}$ at $4\text{x}$, $5$ frames at $8\text{x}$).
+5. **Playback Auto-Scroll (Playhead Follow):**
+   - When playing video while zoomed in, the viewport automatically scrolls forward as the playhead approaches the right edge of the screen ($> 85\%$).
+6. **Edge Drag Scrolling:** Dragging the playhead near the left or right edges of the visible viewport automatically pans the timeline.
+
+---
+
 ## 5. Visual Authoring & Bidirectional `storyboard.ts` Sync
 
 The Studio provides visual editing capabilities (adding text boxes, shapes, images, or layer animations) without forcing developers to leave the browser.
