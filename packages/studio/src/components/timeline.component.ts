@@ -39,38 +39,38 @@ interface DisplayTrack {
           </button>
           
           <span class="ave-toolbar-label">Timeline Tracks</span>
-        </div>
 
-        <!-- Filter Tabs: Everything, Sequences, Assets, None -->
-        <div class="ave-filter-tabs">
-          <button
-            class="ave-tab-btn"
-            [class.active]="state.timelineFilter() === 'all'"
-            (click)="state.setTimelineFilter('all')"
-          >
-            Everything
-          </button>
-          <button
-            class="ave-tab-btn"
-            [class.active]="state.timelineFilter() === 'sequences'"
-            (click)="state.setTimelineFilter('sequences')"
-          >
-            Sequences
-          </button>
-          <button
-            class="ave-tab-btn"
-            [class.active]="state.timelineFilter() === 'assets'"
-            (click)="state.setTimelineFilter('assets')"
-          >
-            Assets
-          </button>
-          <button
-            class="ave-tab-btn"
-            [class.active]="state.timelineFilter() === 'none'"
-            (click)="state.setTimelineFilter('none')"
-          >
-            None
-          </button>
+          <!-- Filter Tabs: Everything, Sequences, Assets, None -->
+          <div class="ave-filter-tabs">
+            <button
+              class="ave-tab-btn"
+              [class.active]="state.timelineFilter() === 'all'"
+              (click)="state.setTimelineFilter('all')"
+            >
+              Everything
+            </button>
+            <button
+              class="ave-tab-btn"
+              [class.active]="state.timelineFilter() === 'sequences'"
+              (click)="state.setTimelineFilter('sequences')"
+            >
+              Sequences
+            </button>
+            <button
+              class="ave-tab-btn"
+              [class.active]="state.timelineFilter() === 'assets'"
+              (click)="state.setTimelineFilter('assets')"
+            >
+              Assets
+            </button>
+            <button
+              class="ave-tab-btn"
+              [class.active]="state.timelineFilter() === 'none'"
+              (click)="state.setTimelineFilter('none')"
+            >
+              None
+            </button>
+          </div>
         </div>
 
         <!-- Right: Timeline Zoom Controls -->
@@ -284,7 +284,7 @@ interface DisplayTrack {
     .ave-toolbar-left {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
     }
 
     .ave-chevron-btn {
