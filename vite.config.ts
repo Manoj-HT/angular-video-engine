@@ -6,13 +6,13 @@ import { WebSocketServer, WebSocket } from 'ws';
 function aveWebSocketPlugin(): Plugin {
   let wss: WebSocketServer | null = null;
   const sessionState = {
-    activeCompositionId: 'DemoPromo',
+    activeCompositionId: 'KineticShowcase',
     frame: 0,
     isPlaying: false,
     speed: 1,
     props: {} as Record<string, unknown>,
     loopStart: 0,
-    loopEnd: 179,
+    loopEnd: 599,
     audioDestination: 'studio' as 'studio' | 'remote',
     viewersCount: 0
   };

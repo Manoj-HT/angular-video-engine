@@ -1,10 +1,77 @@
 import { defineCompositions, VideoMetadata } from '@angular-video/core';
+import { KineticShowcaseComponent, KineticShowcaseProps } from './kinetic/kinetic-showcase.component';
 import { AppDemoSceneComponent, DemoVideoProps } from './demo/demo-scene.component';
 
 export const videoCompositions: VideoMetadata[] = defineCompositions([
   {
+    id: 'KineticShowcase',
+    title: 'Kinetic Motion Showcase (20s)',
+    component: KineticShowcaseComponent,
+    durationInFrames: 600, // 20 seconds at 30 fps
+    fps: 30,
+    width: 1920,
+    height: 1080,
+    defaultProps: <KineticShowcaseProps>{
+      title: 'ANGULAR VIDEO ENGINE',
+      tagline: 'Deterministic, Frame-Accurate Programmatic Video Runtime',
+      badgeText: 'AVE v1.0 KINETIC SHOWCASE',
+      themeColor: '#06b6d4',
+      secondaryColor: '#8b5cf6'
+    },
+    tracks: [
+      {
+        id: 'track-act1-hero',
+        name: 'Act I: Logo & Title',
+        type: 'overlay',
+        items: [{ id: 'hero-title', from: 0, duration: 165, component: KineticShowcaseComponent }]
+      },
+      {
+        id: 'track-act1-eq',
+        name: 'Act I: 28-Bar Equalizer',
+        type: 'video',
+        items: [{ id: 'waveform-bars', from: 35, duration: 130, component: KineticShowcaseComponent }]
+      },
+      {
+        id: 'track-act2-dash',
+        name: 'Act II: Glassmorphism Dashboard',
+        type: 'video',
+        items: [{ id: 'dashboard-grid', from: 155, duration: 175, component: KineticShowcaseComponent }]
+      },
+      {
+        id: 'track-act2-gauge',
+        name: 'Act II: 60 FPS Circular Gauge',
+        type: 'overlay',
+        items: [{ id: 'circular-gauge', from: 165, duration: 150, component: KineticShowcaseComponent }]
+      },
+      {
+        id: 'track-act3-cube',
+        name: 'Act III: 3D Isometric Cube',
+        type: 'video',
+        items: [{ id: 'spatial-cube', from: 325, duration: 165, component: KineticShowcaseComponent }]
+      },
+      {
+        id: 'track-act3-badges',
+        name: 'Act III: Spatial Badges',
+        type: 'overlay',
+        items: [{ id: 'orbit-badges', from: 335, duration: 155, component: KineticShowcaseComponent }]
+      },
+      {
+        id: 'track-act4-finale',
+        name: 'Act IV: Grand Finale & Terminal',
+        type: 'overlay',
+        items: [{ id: 'terminal-cta', from: 480, duration: 120, component: KineticShowcaseComponent }]
+      },
+      {
+        id: 'track-audio-synthwave',
+        name: 'Synthwave Cyber Soundtrack',
+        type: 'audio',
+        items: [{ from: 0, duration: 600, src: 'assets/audio/synthwave.mp3', volume: 0.7 }]
+      }
+    ]
+  },
+  {
     id: 'DemoPromo',
-    title: 'AVE Product Announcement',
+    title: 'AVE Product Announcement (6s)',
     component: AppDemoSceneComponent,
     durationInFrames: 180, // 6 seconds at 30 fps
     fps: 30,
@@ -51,7 +118,7 @@ export const videoCompositions: VideoMetadata[] = defineCompositions([
   },
   {
     id: 'SocialStory',
-    title: '9:16 Vertical Story',
+    title: '9:16 Vertical Story (4s)',
     component: AppDemoSceneComponent,
     durationInFrames: 120, // 4 seconds at 30 fps
     fps: 30,
