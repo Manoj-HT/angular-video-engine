@@ -2,6 +2,7 @@ import { Component, Input, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   injectCurrentFrame,
+  injectGlobalFrame,
   injectVideoConfig,
   interpolate,
   spring,
@@ -76,15 +77,15 @@ export interface KineticShowcaseProps {
       </div>
 
       <!-- ============================================================== -->
-      <!-- ACT I: KINETIC LOGO & EQUALIZER VISUALIZER (Frames 0 - 160)     -->
+      <!-- ACT I: KINETIC LOGO & EQUALIZER VISUALIZER (Frames 0 - 165)     -->
       <!-- ============================================================== -->
       <div class="scene-container" [aveSequence]="{ from: 0, duration: 165 }">
         <!-- Rotating Hexagonal Energy Ring & Shield Logo -->
         <div
           class="hero-logo-box"
           [aveAnimate]="{
-            range: [0, 45],
-            from: { opacity: 0, scale: 0.3, translateY: 60 },
+            range: [0, 30],
+            from: { opacity: 0.5, scale: 0.8, translateY: 20 },
             to: { opacity: 1, scale: 1, translateY: 0 },
             spring: { damping: 11, stiffness: 120 }
           }"
@@ -109,8 +110,8 @@ export interface KineticShowcaseProps {
         <div
           class="neon-badge"
           [aveAnimate]="{
-            range: [15, 50],
-            from: { opacity: 0, translateY: -25, scale: 0.8 },
+            range: [0, 25],
+            from: { opacity: 0.6, translateY: -15, scale: 0.9 },
             to: { opacity: 1, translateY: 0, scale: 1 },
             spring: { damping: 12 }
           }"
@@ -123,8 +124,8 @@ export interface KineticShowcaseProps {
         <h1
           class="kinetic-title"
           [aveAnimate]="{
-            range: [25, 65],
-            from: { opacity: 0, translateY: 50, scale: 0.9 },
+            range: [0, 30],
+            from: { opacity: 0.8, translateY: 25, scale: 0.95 },
             to: { opacity: 1, translateY: 0, scale: 1 },
             spring: { damping: 13 }
           }"
@@ -136,8 +137,8 @@ export interface KineticShowcaseProps {
         <p
           class="kinetic-tagline"
           [aveAnimate]="{
-            range: [40, 80],
-            from: { opacity: 0, translateY: 30 },
+            range: [5, 35],
+            from: { opacity: 0.4, translateY: 15 },
             to: { opacity: 0.9, translateY: 0 }
           }"
         >
@@ -148,8 +149,8 @@ export interface KineticShowcaseProps {
         <div
           class="audio-waveform-bar"
           [aveAnimate]="{
-            range: [50, 90],
-            from: { opacity: 0, scale: 0.8 },
+            range: [10, 40],
+            from: { opacity: 0.5, scale: 0.9 },
             to: { opacity: 1, scale: 1 },
             spring: { damping: 14 }
           }"
@@ -165,7 +166,7 @@ export interface KineticShowcaseProps {
       </div>
 
       <!-- ============================================================== -->
-      <!-- ACT II: 3D GLASSMORPHISM DASHBOARD & GAUGES (Frames 150 - 330) -->
+      <!-- ACT II: 3D GLASSMORPHISM DASHBOARD & GAUGES (Frames 155 - 330) -->
       <!-- ============================================================== -->
       <div class="scene-container" [aveSequence]="{ from: 155, duration: 175 }">
         <div class="scene-header">
@@ -179,7 +180,7 @@ export interface KineticShowcaseProps {
           <div
             class="glass-card"
             [aveAnimate]="{
-              range: [165, 205],
+              range: [10, 45],
               from: { opacity: 0, translateY: 40, scale: 0.85 },
               to: { opacity: 1, translateY: 0, scale: 1 },
               spring: { damping: 12 }
@@ -228,7 +229,7 @@ export interface KineticShowcaseProps {
           <div
             class="glass-card"
             [aveAnimate]="{
-              range: [180, 220],
+              range: [20, 55],
               from: { opacity: 0, translateY: 40, scale: 0.85 },
               to: { opacity: 1, translateY: 0, scale: 1 },
               spring: { damping: 12 }
@@ -278,7 +279,7 @@ export interface KineticShowcaseProps {
           <div
             class="glass-card"
             [aveAnimate]="{
-              range: [195, 235],
+              range: [30, 65],
               from: { opacity: 0, translateY: 40, scale: 0.85 },
               to: { opacity: 1, translateY: 0, scale: 1 },
               spring: { damping: 12 }
@@ -311,7 +312,7 @@ export interface KineticShowcaseProps {
       </div>
 
       <!-- ============================================================== -->
-      <!-- ACT III: 3D ISOMETRIC GEOMETRY & MORPHING CUBE (Frames 320-480)-->
+      <!-- ACT III: 3D ISOMETRIC GEOMETRY & MORPHING CUBE (Frames 325-490)-->
       <!-- ============================================================== -->
       <div class="scene-container" [aveSequence]="{ from: 325, duration: 165 }">
         <div class="scene-header">
@@ -333,11 +334,11 @@ export interface KineticShowcaseProps {
             <div class="cube-face bottom"><span>NODE</span></div>
           </div>
 
-          <!-- Surrounding Orbiting Feature Badges -->
+          <!-- Surrounding Orbiting Feature Badges (relative to sequence start) -->
           <div
             class="orbit-badge badge-top-left"
             [aveAnimate]="{
-              range: [335, 375],
+              range: [10, 40],
               from: { opacity: 0, translateX: -60, scale: 0.5 },
               to: { opacity: 1, translateX: 0, scale: 1 },
               spring: { damping: 12 }
@@ -349,7 +350,7 @@ export interface KineticShowcaseProps {
           <div
             class="orbit-badge badge-top-right"
             [aveAnimate]="{
-              range: [345, 385],
+              range: [18, 48],
               from: { opacity: 0, translateX: 60, scale: 0.5 },
               to: { opacity: 1, translateX: 0, scale: 1 },
               spring: { damping: 12 }
@@ -361,7 +362,7 @@ export interface KineticShowcaseProps {
           <div
             class="orbit-badge badge-bot-left"
             [aveAnimate]="{
-              range: [355, 395],
+              range: [26, 56],
               from: { opacity: 0, translateX: -60, scale: 0.5 },
               to: { opacity: 1, translateX: 0, scale: 1 },
               spring: { damping: 12 }
@@ -373,7 +374,7 @@ export interface KineticShowcaseProps {
           <div
             class="orbit-badge badge-bot-right"
             [aveAnimate]="{
-              range: [365, 405],
+              range: [34, 64],
               from: { opacity: 0, translateX: 60, scale: 0.5 },
               to: { opacity: 1, translateX: 0, scale: 1 },
               spring: { damping: 12 }
@@ -385,7 +386,7 @@ export interface KineticShowcaseProps {
       </div>
 
       <!-- ============================================================== -->
-      <!-- ACT IV: GRAND FINALE & CODE TERMINAL (Frames 470 - 600)        -->
+      <!-- ACT IV: GRAND FINALE & CODE TERMINAL (Frames 480 - 600)        -->
       <!-- ============================================================== -->
       <div class="scene-container" [aveSequence]="{ from: 480, duration: 120 }">
         <!-- Expanding Shockwave Ring -->
@@ -399,7 +400,7 @@ export interface KineticShowcaseProps {
           <div
             class="finale-pill"
             [aveAnimate]="{
-              range: [480, 515],
+              range: [5, 30],
               from: { opacity: 0, translateY: -20 },
               to: { opacity: 1, translateY: 0 },
               spring: { damping: 12 }
@@ -411,7 +412,7 @@ export interface KineticShowcaseProps {
           <h2
             class="finale-headline"
             [aveAnimate]="{
-              range: [490, 530],
+              range: [12, 42],
               from: { opacity: 0, translateY: 30, scale: 0.9 },
               to: { opacity: 1, translateY: 0, scale: 1 },
               spring: { damping: 14 }
@@ -424,7 +425,7 @@ export interface KineticShowcaseProps {
           <div
             class="terminal-window"
             [aveAnimate]="{
-              range: [505, 545],
+              range: [20, 55],
               from: { opacity: 0, translateY: 40, scale: 0.92 },
               to: { opacity: 1, translateY: 0, scale: 1 },
               spring: { damping: 13 }
@@ -451,7 +452,7 @@ export interface KineticShowcaseProps {
           <div
             class="cta-button-box"
             [aveAnimate]="{
-              range: [520, 560],
+              range: [35, 70],
               from: { opacity: 0, scale: 0.7 },
               to: { opacity: 1, scale: 1 },
               spring: { damping: 10 }
@@ -1047,13 +1048,52 @@ export interface KineticShowcaseProps {
   `]
 })
 export class KineticShowcaseComponent {
-  @Input() title = 'ANGULAR VIDEO ENGINE';
-  @Input() tagline = 'Deterministic, Frame-Accurate Programmatic Video Runtime';
-  @Input() badgeText = 'AVE v1.0 KINETIC SHOWCASE';
-  @Input() themeColor = '#06b6d4';
-  @Input() secondaryColor = '#8b5cf6';
+  private _title = 'ANGULAR VIDEO ENGINE';
+  @Input()
+  set title(val: string) {
+    this._title = val && val.trim() ? val : 'ANGULAR VIDEO ENGINE';
+  }
+  get title(): string {
+    return this._title;
+  }
 
-  readonly frame = injectCurrentFrame();
+  private _tagline = 'Deterministic, Frame-Accurate Programmatic Video Runtime';
+  @Input()
+  set tagline(val: string) {
+    this._tagline = val && val.trim() ? val : 'Deterministic, Frame-Accurate Programmatic Video Runtime';
+  }
+  get tagline(): string {
+    return this._tagline;
+  }
+
+  private _badgeText = 'AVE v1.0 KINETIC SHOWCASE';
+  @Input()
+  set badgeText(val: string) {
+    this._badgeText = val && val.trim() ? val : 'AVE v1.0 KINETIC SHOWCASE';
+  }
+  get badgeText(): string {
+    return this._badgeText;
+  }
+
+  private _themeColor = '#06b6d4';
+  @Input()
+  set themeColor(val: string) {
+    this._themeColor = val || '#06b6d4';
+  }
+  get themeColor(): string {
+    return this._themeColor;
+  }
+
+  private _secondaryColor = '#8b5cf6';
+  @Input()
+  set secondaryColor(val: string) {
+    this._secondaryColor = val || '#8b5cf6';
+  }
+  get secondaryColor(): string {
+    return this._secondaryColor;
+  }
+
+  readonly frame = injectGlobalFrame();
   readonly config = injectVideoConfig();
 
   protected readonly Math = Math;

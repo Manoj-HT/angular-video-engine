@@ -213,7 +213,7 @@ export class PresentationSyncService {
           if (typeof state.frame === 'number') {
             this.frameService.setFrame(state.frame);
           }
-          if (state.props) {
+          if (state.props && Object.keys(state.props).length > 0) {
             this.studioState.activeProps.set({ ...state.props });
           }
           if (state.audioDestination) {

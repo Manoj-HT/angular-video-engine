@@ -10,12 +10,26 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StudioStateService } from '../services/studio-state.service';
-import { RootFrameService } from '@angular-video/core';
+import { RootFrameService, FRAME_TOKEN, GLOBAL_FRAME_TOKEN, VIDEO_CONFIG_TOKEN } from '@angular-video/core';
 
 @Component({
   selector: 'ave-canvas-stage',
   standalone: true,
   imports: [CommonModule],
+  providers: [
+    {
+      provide: FRAME_TOKEN,
+      useFactory: () => inject(RootFrameService).frame
+    },
+    {
+      provide: GLOBAL_FRAME_TOKEN,
+      useFactory: () => inject(RootFrameService).frame
+    },
+    {
+      provide: VIDEO_CONFIG_TOKEN,
+      useFactory: () => inject(RootFrameService).config
+    }
+  ],
   template: `
     <div #viewport class="ave-stage-viewport" [class.checkerboard]="state.showCheckerboard()">
       @if (state.activeComposition(); as comp) {

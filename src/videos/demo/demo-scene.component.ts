@@ -40,7 +40,7 @@ export interface DemoVideoProps {
           class="badge"
           [aveSequence]="{ from: 10, duration: 170 }"
           [aveAnimate]="{
-            range: [10, 40],
+            range: [0, 30],
             from: { opacity: 0, translateY: -20, scale: 0.8 },
             to: { opacity: 1, translateY: 0, scale: 1 },
             spring: { damping: 12 }
@@ -55,7 +55,7 @@ export interface DemoVideoProps {
           class="headline"
           [aveSequence]="{ from: 20, duration: 160 }"
           [aveAnimate]="{
-            range: [20, 60],
+            range: [0, 40],
             from: { opacity: 0, translateY: 40 },
             to: { opacity: 1, translateY: 0 },
             spring: { damping: 14 }
@@ -69,7 +69,7 @@ export interface DemoVideoProps {
           class="subhead"
           [aveSequence]="{ from: 35, duration: 145 }"
           [aveAnimate]="{
-            range: [35, 75],
+            range: [0, 40],
             from: { opacity: 0, translateY: 20 },
             to: { opacity: 0.9, translateY: 0 }
           }"
@@ -83,7 +83,7 @@ export interface DemoVideoProps {
             <div
               class="feature-card"
               [aveAnimate]="{
-                range: [50, 90],
+                range: [0, 40],
                 stagger: staggerFn,
                 index: i,
                 total: features.length,
@@ -226,10 +226,41 @@ export interface DemoVideoProps {
 export class AppDemoSceneComponent {
   private frame = injectCurrentFrame();
 
-  @Input() headline = 'Build Videos in Angular';
-  @Input() subhead = 'Deterministic, frame-accurate programmatic video framework with Signals and Directives.';
-  @Input() themeColor = '#3b82f6';
-  @Input() badgeText = 'AVE 1.0 Release';
+  private _headline = 'Build Videos in Angular';
+  @Input()
+  set headline(val: string) {
+    this._headline = val && val.trim() ? val : 'Build Videos in Angular';
+  }
+  get headline(): string {
+    return this._headline;
+  }
+
+  private _subhead = 'Deterministic, frame-accurate programmatic video framework with Signals and Directives.';
+  @Input()
+  set subhead(val: string) {
+    this._subhead = val && val.trim() ? val : 'Deterministic, frame-accurate programmatic video framework with Signals and Directives.';
+  }
+  get subhead(): string {
+    return this._subhead;
+  }
+
+  private _themeColor = '#3b82f6';
+  @Input()
+  set themeColor(val: string) {
+    this._themeColor = val || '#3b82f6';
+  }
+  get themeColor(): string {
+    return this._themeColor;
+  }
+
+  private _badgeText = 'AVE 1.0 Release';
+  @Input()
+  set badgeText(val: string) {
+    this._badgeText = val && val.trim() ? val : 'AVE 1.0 Release';
+  }
+  get badgeText(): string {
+    return this._badgeText;
+  }
 
   readonly staggerFn = stagger.from('center', { each: 5 });
 

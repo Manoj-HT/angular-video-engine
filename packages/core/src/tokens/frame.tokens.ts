@@ -1,24 +1,29 @@
-import { InjectionToken, inject, Signal, signal } from '@angular/core';
+import { InjectionToken, inject, Signal } from '@angular/core';
 import { VideoConfig } from '../types/video.types';
+import { RootFrameService } from '../services/frame.service';
 
+/**
+ * Token providing the current frame signal (relative to local sequence context, or global if at root).
+ */
 export const FRAME_TOKEN = new InjectionToken<Signal<number>>('AVE_FRAME_TOKEN', {
   providedIn: 'root',
-  factory: () => signal(0)
+  factory: () => inject(RootFrameService).frame
 });
 
+/**
+ * Token providing the global master frame signal across the entire composition.
+ */
 export const GLOBAL_FRAME_TOKEN = new InjectionToken<Signal<number>>('AVE_GLOBAL_FRAME_TOKEN', {
   providedIn: 'root',
-  factory: () => inject(FRAME_TOKEN)
+  factory: () => inject(RootFrameService).frame
 });
 
+/**
+ * Token providing the active video composition configuration (FPS, width, height, duration).
+ */
 export const VIDEO_CONFIG_TOKEN = new InjectionToken<Signal<VideoConfig>>('AVE_VIDEO_CONFIG_TOKEN', {
   providedIn: 'root',
-  factory: () => signal({
-    fps: 30,
-    width: 1920,
-    height: 1080,
-    durationInFrames: 300
-  })
+  factory: () => inject(RootFrameService).config
 });
 
 /**

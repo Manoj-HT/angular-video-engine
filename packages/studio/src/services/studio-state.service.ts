@@ -106,14 +106,15 @@ export class StudioStateService {
 
   setCompositions(list: VideoMetadata[]): void {
     this.compositions.set(list);
-    if (list.length > 0 && !this.activeCompositionId()) {
-      this.selectComposition(list[0].id);
+    if (list.length > 0) {
+      const targetId = this.activeCompositionId() || list[0].id;
+      this.selectComposition(targetId);
     }
   }
 
   selectComposition(id: string): void {
     this.activeCompositionId.set(id);
-    const comp = this.compositions().find(c => c.id === id);
+    const comp = this.compositions().find(c => c.id === id) ?? this.compositions()[0];
     if (comp) {
       this.frameService.setConfig({
         fps: comp.fps,
@@ -121,9 +122,11 @@ export class StudioStateService {
         height: comp.height,
         durationInFrames: comp.durationInFrames
       });
-      this.activeProps.set({ ...(comp.defaultProps ?? {}) });
+      this.activeProps.update(prev => ({
+        ...(comp.defaultProps ?? {}),
+        ...prev
+      }));
       this.resetLoop();
-      this.frameService.setFrame(0);
     }
   }
 
