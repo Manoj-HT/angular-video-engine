@@ -12,6 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { StudioStateService } from '../services/studio-state.service';
 import { RootFrameService } from '@angular-video/core';
 import { AveAssetLibraryComponent } from './asset-library.component';
+import { AveVisualAnimatorComponent } from './visual-animator.component';
 
 export interface StudioToolItem {
   id: string;
@@ -25,7 +26,7 @@ export interface StudioToolItem {
 @Component({
   selector: 'ave-inspector',
   standalone: true,
-  imports: [CommonModule, FormsModule, AveAssetLibraryComponent],
+  imports: [CommonModule, FormsModule, AveAssetLibraryComponent, AveVisualAnimatorComponent],
   template: `
     <div class="ave-inspector-panel">
       <!-- Searchable Tools List View -->
@@ -351,6 +352,8 @@ export interface StudioToolItem {
           }
         } @else if (isAssetLibraryTool()) {
           <ave-asset-library />
+        } @else if (isAnimatorTool()) {
+          <ave-visual-animator />
         } @else {
           <!-- Tool Placeholder Card for tools to be implemented (e.g. AI) -->
           <div class="ave-tool-placeholder-card">
@@ -371,7 +374,7 @@ export interface StudioToolItem {
   styles: [`
     :host {
       display: block;
-      width: 320px;
+      width: 340px;
       height: 100%;
       background: #12131d;
       border-left: 1px solid #1f2233;
@@ -1253,6 +1256,14 @@ export class AveInspectorComponent {
       ready: true
     },
     {
+      id: 'animator',
+      name: 'Visual Animator & Styler',
+      icon: '✨',
+      description: 'Hierarchical DOM inspector to visually write CSS and frame-accurate aveAnimate directives',
+      category: 'Animation',
+      ready: true
+    },
+    {
       id: 'telemetry',
       name: 'Performance & Telemetry',
       icon: '⚡',
@@ -1372,6 +1383,10 @@ export class AveInspectorComponent {
 
   isAssetLibraryTool(): boolean {
     return this.state.activeTool() === 'assets';
+  }
+
+  isAnimatorTool(): boolean {
+    return this.state.activeTool() === 'animator';
   }
 
   selectTool(toolId: string): void {

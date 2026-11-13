@@ -11,6 +11,12 @@ import {
   deleteAsset,
   getSafePath
 } from './packages/studio/src/server/asset-manager';
+import {
+  writeCssProperty,
+  removeCssProperty,
+  writeAveAnimateDirective,
+  inspectElementStylesAndAnimation
+} from './packages/studio/src/server/styler-manager';
 
 function aveWebSocketPlugin(): Plugin {
   let wss: WebSocketServer | null = null;
@@ -174,6 +180,97 @@ function aveWebSocketPlugin(): Plugin {
               const data = body ? JSON.parse(body) : {};
               const targetPath = data.path || url.searchParams.get('path') || '';
               const result = deleteAsset(assetsBaseDir, targetPath);
+              res.statusCode = result.success ? 200 : 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(result));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+          return;
+        }
+
+        next();
+      });
+
+      // Visual Animator & Styler Endpoints
+      server.middlewares.use('/api/styler', (req, res, next) => {
+        const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+        const pathname = url.pathname;
+
+        // 1. GET /api/styler/inspect
+        if (req.method === 'GET' && pathname === '/inspect') {
+          try {
+            const compId = url.searchParams.get('compositionId') || 'DirectivesShowcase';
+            const target: any = {
+              aveName: url.searchParams.get('aveName') || undefined,
+              dataName: url.searchParams.get('dataName') || undefined,
+              className: url.searchParams.get('className') || undefined,
+              tagName: url.searchParams.get('tagName') || undefined,
+              elementId: url.searchParams.get('elementId') || undefined,
+              selector: url.searchParams.get('selector') || undefined
+            };
+            const result = inspectElementStylesAndAnimation(compId, target);
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(result));
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+          return;
+        }
+
+        // 2. POST /api/styler/css
+        if (req.method === 'POST' && pathname === '/css') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const { compositionId, selector, property, value } = JSON.parse(body);
+              const result = writeCssProperty(compositionId, selector, property, value);
+              res.statusCode = result.success ? 200 : 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(result));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 3. POST /api/styler/remove-css
+        if (req.method === 'POST' && pathname === '/remove-css') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const { compositionId, selector, property } = JSON.parse(body);
+              const result = removeCssProperty(compositionId, selector, property);
+              res.statusCode = result.success ? 200 : 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(result));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 4. POST /api/styler/animate
+        if (req.method === 'POST' && pathname === '/animate') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const { compositionId, target, config, removeCssProp } = JSON.parse(body);
+              const result = writeAveAnimateDirective(compositionId, target, config, removeCssProp);
               res.statusCode = result.success ? 200 : 400;
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify(result));
