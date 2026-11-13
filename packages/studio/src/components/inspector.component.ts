@@ -209,7 +209,26 @@ export interface StudioToolItem {
               <div class="ave-comp-prop-field">
                 <div class="ave-comp-prop-label-row">
                   <span class="ave-prop-label">Dimensions</span>
-                  <span class="ave-aspect-pill">{{ getAspectRatio(comp.width, comp.height) }}</span>
+                  <div class="ave-dim-actions">
+                    <span class="ave-aspect-pill">{{ getAspectRatio(comp.width, comp.height) }}</span>
+                    <button
+                      type="button"
+                      class="ave-dim-action-btn"
+                      [class.active]="isAspectRatioLocked()"
+                      (click)="toggleAspectRatioLock()"
+                      [title]="isAspectRatioLocked() ? 'Aspect ratio locked: Width and Height scale together' : 'Lock aspect ratio to scale dimensions proportionally'"
+                    >
+                      {{ isAspectRatioLocked() ? '🔒' : '🔓' }}
+                    </button>
+                    <button
+                      type="button"
+                      class="ave-dim-action-btn"
+                      (click)="flipOrientation()"
+                      title="Flip Orientation (Swap Width & Height)"
+                    >
+                      ⇄
+                    </button>
+                  </div>
                 </div>
                 <div class="ave-dimensions-grid">
                   <div class="ave-input-with-affix">
@@ -226,7 +245,9 @@ export interface StudioToolItem {
                     />
                     <span class="ave-input-suffix">px</span>
                   </div>
-                  <span class="ave-dim-divider">×</span>
+                  <span class="ave-dim-divider" [class.locked]="isAspectRatioLocked()">
+                    {{ isAspectRatioLocked() ? '🔗' : '×' }}
+                  </span>
                   <div class="ave-input-with-affix">
                     <span class="ave-input-prefix">H</span>
                     <input
@@ -276,36 +297,52 @@ export interface StudioToolItem {
                 </div>
               </div>
 
-              <!-- Duration with frames / seconds dropdown -->
+              <!-- Duration with frames / seconds / timecode dropdown -->
               <div class="ave-comp-prop-field">
                 <div class="ave-comp-prop-label-row">
                   <span class="ave-prop-label">Duration</span>
                   <span class="ave-duration-alt-hint">
                     @if (durationUnit() === 'frames') {
-                      ≈ {{ (comp.durationInFrames / comp.fps).toFixed(2) }}s
+                      ≈ {{ (comp.durationInFrames / comp.fps).toFixed(2) }}s ({{ durationInTimecode() }})
+                    } @else if (durationUnit() === 'seconds') {
+                      = {{ comp.durationInFrames }} frames ({{ durationInTimecode() }})
                     } @else {
-                      = {{ comp.durationInFrames }} frames
+                      = {{ comp.durationInFrames }} frames ({{ (comp.durationInFrames / comp.fps).toFixed(2) }}s)
                     }
                   </span>
                 </div>
                 <div class="ave-duration-row">
-                  <input
-                    type="number"
-                    class="ave-duration-input"
-                    [value]="durationUnit() === 'frames' ? comp.durationInFrames : durationInSeconds()"
-                    [min]="durationUnit() === 'frames' ? 1 : 0.1"
-                    [step]="durationUnit() === 'frames' ? 1 : 0.5"
-                    (input)="onDurationValueChange($event)"
-                    title="Duration in selected unit"
-                  />
+                  @if (durationUnit() === 'timecode') {
+                    <input
+                      type="text"
+                      class="ave-duration-input ave-mono-input"
+                      [value]="durationInTimecode()"
+                      (input)="onTimecodeChange($event)"
+                      (change)="onTimecodeChange($event)"
+                      (keydown.enter)="onTimecodeChange($event)"
+                      placeholder="00:00:20:00"
+                      title="SMPTE Timecode (HH:MM:SS:FF) — Press Enter to apply"
+                    />
+                  } @else {
+                    <input
+                      type="number"
+                      class="ave-duration-input"
+                      [value]="durationUnit() === 'frames' ? comp.durationInFrames : durationInSeconds()"
+                      [min]="durationUnit() === 'frames' ? 1 : 0.1"
+                      [step]="durationUnit() === 'frames' ? 1 : 0.5"
+                      (input)="onDurationValueChange($event)"
+                      title="Duration in selected unit"
+                    />
+                  }
                   <select
                     class="ave-unit-select"
                     [value]="durationUnit()"
                     (change)="onDurationUnitChange($event)"
-                    title="Select duration unit (frames or seconds)"
+                    title="Select duration unit (frames, seconds, or SMPTE timecode)"
                   >
                     <option value="frames">Frames</option>
                     <option value="seconds">Seconds</option>
+                    <option value="timecode">Timecode (SMPTE)</option>
                   </select>
                 </div>
               </div>
@@ -789,6 +826,39 @@ export interface StudioToolItem {
       border-radius: 4px;
     }
 
+    .ave-dim-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .ave-dim-action-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid #282a3e;
+      border-radius: 4px;
+      color: #94a3b8;
+      font-size: 11px;
+      padding: 1px 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      line-height: 1.4;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.09);
+        color: #f1f5f9;
+        border-color: #38bdf8;
+      }
+
+      &.active {
+        background: rgba(56, 189, 248, 0.15);
+        color: #38bdf8;
+        border-color: #38bdf8;
+      }
+    }
+
     .ave-dimensions-grid {
       display: flex;
       align-items: center;
@@ -799,6 +869,12 @@ export interface StudioToolItem {
       color: #64748b;
       font-size: 12px;
       font-weight: bold;
+      transition: color 0.15s ease;
+
+      &.locked {
+        font-size: 11px;
+        color: #38bdf8;
+      }
     }
 
     .ave-input-with-affix {
@@ -1230,8 +1306,8 @@ export class AveInspectorComponent {
     return Object.keys(this.state.activeProps());
   });
 
-  // Duration unit toggle: 'frames' | 'seconds'
-  readonly durationUnit = signal<'frames' | 'seconds'>('frames');
+  // Duration unit toggle: 'frames' | 'seconds' | 'timecode'
+  readonly durationUnit = signal<'frames' | 'seconds' | 'timecode'>('frames');
 
   // Computed duration in seconds
   readonly durationInSeconds = computed<number>(() => {
@@ -1239,6 +1315,41 @@ export class AveInspectorComponent {
     if (!comp || comp.fps <= 0) return 0;
     return Number((comp.durationInFrames / comp.fps).toFixed(2));
   });
+
+  // Computed duration in SMPTE timecode (HH:MM:SS:FF)
+  readonly durationInTimecode = computed<string>(() => {
+    const comp = this.state.activeComposition();
+    if (!comp || comp.fps <= 0) return '00:00:00:00';
+    return this.framesToTimecode(comp.durationInFrames, comp.fps);
+  });
+
+  // Pro Aspect Ratio Lock & Orientation Flip
+  readonly isAspectRatioLocked = signal<boolean>(false);
+  private lockedRatio: number | null = null;
+
+  toggleAspectRatioLock(): void {
+    const nextLocked = !this.isAspectRatioLocked();
+    this.isAspectRatioLocked.set(nextLocked);
+    if (nextLocked) {
+      const comp = this.state.activeComposition();
+      if (comp && comp.height > 0) {
+        this.lockedRatio = comp.width / comp.height;
+      }
+    } else {
+      this.lockedRatio = null;
+    }
+  }
+
+  flipOrientation(): void {
+    const comp = this.state.activeComposition();
+    if (!comp) return;
+    const newWidth = comp.height;
+    const newHeight = comp.width;
+    if (this.isAspectRatioLocked() && newHeight > 0) {
+      this.lockedRatio = newWidth / newHeight;
+    }
+    this.state.updateCompositionDetails({ width: newWidth, height: newHeight });
+  }
 
   constructor() {
     effect(() => {
@@ -1302,12 +1413,27 @@ export class AveInspectorComponent {
 
   onDimensionChange(dimension: 'width' | 'height', event: Event): void {
     const val = parseInt((event.target as HTMLInputElement).value, 10);
-    if (!isNaN(val) && val >= 16 && val <= 7680) {
+    if (isNaN(val) || val < 16 || val > 7680) return;
+
+    if (this.isAspectRatioLocked()) {
+      const comp = this.state.activeComposition();
+      const ratio = this.lockedRatio ?? (comp && comp.height > 0 ? comp.width / comp.height : 16 / 9);
+      if (dimension === 'width') {
+        const pairedHeight = Math.max(16, Math.min(7680, Math.round(val / ratio)));
+        this.state.updateCompositionDetails({ width: val, height: pairedHeight });
+      } else {
+        const pairedWidth = Math.max(16, Math.min(7680, Math.round(val * ratio)));
+        this.state.updateCompositionDetails({ width: pairedWidth, height: val });
+      }
+    } else {
       this.state.updateCompositionDetails({ [dimension]: val });
     }
   }
 
   applyResolution(width: number, height: number): void {
+    if (this.isAspectRatioLocked() && height > 0) {
+      this.lockedRatio = width / height;
+    }
     this.state.updateCompositionDetails({ width, height });
   }
 
@@ -1323,8 +1449,51 @@ export class AveInspectorComponent {
   }
 
   onDurationUnitChange(event: Event): void {
-    const unit = (event.target as HTMLSelectElement).value as 'frames' | 'seconds';
+    const unit = (event.target as HTMLSelectElement).value as 'frames' | 'seconds' | 'timecode';
     this.durationUnit.set(unit);
+  }
+
+  framesToTimecode(frames: number, fps: number): string {
+    if (fps <= 0 || frames < 0) return '00:00:00:00';
+    const totalSeconds = Math.floor(frames / fps);
+    const f = Math.floor(frames % fps);
+    const s = Math.floor(totalSeconds % 60);
+    const m = Math.floor((totalSeconds / 60) % 60);
+    const h = Math.floor(totalSeconds / 3600);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${pad(h)}:${pad(m)}:${pad(s)}:${pad(f)}`;
+  }
+
+  timecodeToFrames(tc: string, fps: number): number | null {
+    if (!tc || !tc.trim()) return null;
+    const parts = tc.trim().split(':').map(p => parseInt(p, 10));
+    if (parts.some(p => isNaN(p) || p < 0)) return null;
+
+    let h = 0, m = 0, s = 0, f = 0;
+    if (parts.length === 4) {
+      [h, m, s, f] = parts;
+    } else if (parts.length === 3) {
+      [m, s, f] = parts;
+    } else if (parts.length === 2) {
+      [s, f] = parts;
+    } else if (parts.length === 1) {
+      return parts[0];
+    } else {
+      return null;
+    }
+
+    const totalSeconds = h * 3600 + m * 60 + s;
+    return Math.max(1, Math.round(totalSeconds * fps + f));
+  }
+
+  onTimecodeChange(event: Event): void {
+    const comp = this.state.activeComposition();
+    if (!comp) return;
+    const raw = (event.target as HTMLInputElement).value;
+    const parsedFrames = this.timecodeToFrames(raw, comp.fps);
+    if (parsedFrames !== null) {
+      this.state.updateCompositionDetails({ durationInFrames: parsedFrames });
+    }
   }
 
   onDurationValueChange(event: Event): void {
