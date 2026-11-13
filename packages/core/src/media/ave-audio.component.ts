@@ -5,10 +5,12 @@ import {
   ViewChild,
   effect,
   inject,
-  afterNextRender
+  afterNextRender,
+  OnDestroy
 } from '@angular/core';
 import { injectCurrentFrame, injectVideoConfig } from '../tokens/frame.tokens';
 import { injectAssetGate } from '../services/asset-gate.service';
+import { RootFrameService } from '../services/frame.service';
 
 @Component({
   selector: 'ave-audio',
@@ -16,7 +18,7 @@ import { injectAssetGate } from '../services/asset-gate.service';
   template: `<audio #audio [src]="src" [muted]="muted" preload="auto"></audio>`,
   styles: [`:host { display: none; }`]
 })
-export class AveAudioComponent {
+export class AveAudioComponent implements OnDestroy {
   @ViewChild('audio', { static: true }) audioRef!: ElementRef<HTMLAudioElement>;
 
   @Input({ required: true }) src!: string;
@@ -28,6 +30,7 @@ export class AveAudioComponent {
   private frame = injectCurrentFrame();
   private config = injectVideoConfig();
   private gate = injectAssetGate();
+  private frameService = inject(RootFrameService);
 
   constructor() {
     afterNextRender(() => {
@@ -36,18 +39,20 @@ export class AveAudioComponent {
 
     effect(() => {
       const f = this.frame();
+      const isPlaying = this.frameService.isPlaying();
       const vol = this.volume;
       const rate = this.playbackRate;
 
       const audio = this.audioRef?.nativeElement;
       if (!audio) return;
 
-      audio.volume = Math.max(0, Math.min(1, vol));
+      audio.muted = this.muted;
+      audio.volume = this.muted ? 0 : Math.max(0, Math.min(1, vol));
       if (audio.playbackRate !== rate && rate > 0) {
         audio.playbackRate = rate;
       }
 
-      this.syncAudio(f);
+      this.syncAudio(f, isPlaying);
     });
   }
 
@@ -59,7 +64,7 @@ export class AveAudioComponent {
       'canplaythrough',
       () => {
         unblock();
-        this.syncAudio(this.frame());
+        this.syncAudio(this.frame(), this.frameService.isPlaying());
       },
       { once: true }
     );
@@ -70,18 +75,44 @@ export class AveAudioComponent {
     });
   }
 
-  private syncAudio(videoFrame: number): void {
+  private syncAudio(videoFrame: number, isPlaying: boolean): void {
     const audio = this.audioRef?.nativeElement;
-    if (!audio || !audio.duration) return;
+    if (!audio) return;
 
     const fps = this.config().fps;
-    const targetSourceFrame = Math.max(0, videoFrame - this.startFrom);
+    const targetSourceFrame = videoFrame - this.startFrom;
     const targetTimeSec = (targetSourceFrame / fps) * this.playbackRate;
 
-    const clampedTime = Math.max(0, Math.min(targetTimeSec, audio.duration));
+    if (targetTimeSec >= 0 && (!audio.duration || targetTimeSec < audio.duration)) {
+      if (isPlaying) {
+        if (audio.paused) {
+          audio.currentTime = Math.max(0, targetTimeSec);
+          audio.play().catch(() => {});
+        } else if (Math.abs(audio.currentTime - targetTimeSec) > 0.12) {
+          audio.currentTime = targetTimeSec;
+        }
+      } else {
+        if (!audio.paused) {
+          audio.pause();
+        }
+        if (Math.abs(audio.currentTime - targetTimeSec) > 0.05) {
+          audio.currentTime = Math.max(0, targetTimeSec);
+        }
+      }
+    } else {
+      if (!audio.paused) {
+        audio.pause();
+      }
+    }
+  }
 
-    if (Math.abs(audio.currentTime - clampedTime) > 0.05) {
-      audio.currentTime = clampedTime;
+  ngOnDestroy(): void {
+    const audio = this.audioRef?.nativeElement;
+    if (audio) {
+      try {
+        audio.pause();
+        audio.src = '';
+      } catch {}
     }
   }
 

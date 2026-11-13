@@ -1,6 +1,7 @@
 // Services
 export * from './services/studio-state.service';
 export * from './services/presentation-sync.service';
+export * from './services/studio-audio.service';
 
 // Components
 export * from './components/studio.component';

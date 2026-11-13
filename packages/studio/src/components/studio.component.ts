@@ -12,6 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { VideoMetadata, RootFrameService } from '@angular-video/core';
 import { StudioStateService } from '../services/studio-state.service';
+import { StudioAudioService } from '../services/studio-audio.service';
 import { AveCanvasStageComponent } from './canvas-stage.component';
 import { AveTimelineComponent } from './timeline.component';
 import { AveTransportBarComponent } from './transport-bar.component';
@@ -116,6 +117,7 @@ import { AveStudioHeaderComponent } from './studio-header.component';
 export class AveStudioComponent implements OnInit, OnChanges {
   protected state = inject(StudioStateService);
   protected frameService = inject(RootFrameService);
+  protected audioService = inject(StudioAudioService);
 
   @Input() compositions: VideoMetadata[] = [];
   @Input() activeId?: string;
@@ -125,6 +127,7 @@ export class AveStudioComponent implements OnInit, OnChanges {
   @Output() exportRequested = new EventEmitter<VideoMetadata>();
 
   ngOnInit(): void {
+    this.audioService.setCleanFeedMode(false);
     if (this.compositions.length > 0) {
       this.state.setCompositions(this.compositions);
       if (this.activeId) {

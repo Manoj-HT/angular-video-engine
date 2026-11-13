@@ -14,6 +14,7 @@ import { CommonModule } from '@angular/common';
 import { RootFrameService, VideoMetadata } from '@angular-video/core';
 import { StudioStateService } from '../services/studio-state.service';
 import { PresentationSyncService } from '../services/presentation-sync.service';
+import { StudioAudioService } from '../services/studio-audio.service';
 import { AveCanvasStageComponent } from './canvas-stage.component';
 
 @Component({
@@ -169,6 +170,7 @@ export class AveCleanFeedComponent implements OnInit, OnDestroy {
   protected frameService = inject(RootFrameService);
   protected state = inject(StudioStateService);
   protected sync = inject(PresentationSyncService);
+  protected audioService = inject(StudioAudioService);
 
   readonly showHud = signal<boolean>(true);
   readonly isFullscreen = signal<boolean>(false);
@@ -180,6 +182,7 @@ export class AveCleanFeedComponent implements OnInit, OnDestroy {
   private hudTimeout: any = null;
 
   ngOnInit(): void {
+    this.audioService.setCleanFeedMode(true);
     if (this.compositions && this.compositions.length > 0) {
       this.state.setCompositions(this.compositions);
     }
