@@ -44,10 +44,15 @@ function aveWebSocketPlugin(): Plugin {
           if (client.readyState === WebSocket.OPEN) count++;
         }
         sessionState.viewersCount = Math.max(0, count - 1);
+        // If all remote viewers have disconnected, automatically route audio back to studio
+        if (sessionState.viewersCount === 0) {
+          sessionState.audioDestination = 'studio';
+        }
         const payload = JSON.stringify({
           type: 'VIEWERS_COUNT',
           count: sessionState.viewersCount,
-          total: count
+          total: count,
+          audioDestination: sessionState.audioDestination
         });
 
         for (const client of wss.clients) {
@@ -58,6 +63,17 @@ function aveWebSocketPlugin(): Plugin {
       }
 
       wss.on('connection', (ws: WebSocket) => {
+        let activeClients = 0;
+        for (const client of wss!.clients) {
+          if (client.readyState === WebSocket.OPEN) activeClients++;
+        }
+        // If this is the only connected client (new studio tab), start cleanly paused at frame 0
+        if (activeClients <= 1) {
+          sessionState.isPlaying = false;
+          sessionState.frame = 0;
+          sessionState.audioDestination = 'studio';
+        }
+
         // Immediate handshake: send authoritative state snapshot
         ws.send(JSON.stringify({ type: 'INIT_STATE', state: sessionState }));
 

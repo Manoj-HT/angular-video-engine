@@ -65,7 +65,7 @@ export const videoCompositions: VideoMetadata[] = defineCompositions([
         id: 'track-audio-synthwave',
         name: 'Synthwave Cyber Soundtrack',
         type: 'audio',
-        items: [{ from: 0, duration: 600, src: 'assets/audio/synthwave.mp3', volume: 0.7 }]
+        items: [{ from: 0, duration: 600, src: 'assets/audio/synthwave.mp3', volume: 1.0 }]
       }
     ]
   },
@@ -112,7 +112,7 @@ export const videoCompositions: VideoMetadata[] = defineCompositions([
         id: 'track-asset-audio',
         name: 'Ambient Soundtrack',
         type: 'audio',
-        items: [{ from: 0, duration: 180, src: 'assets/audio/ambient.mp3', volume: 0.5 }]
+        items: [{ from: 0, duration: 180, src: 'assets/audio/ambient.mp3', volume: 1.0 }]
       }
     ]
   },

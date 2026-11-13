@@ -100,12 +100,13 @@ export class PresentationSyncService {
     // Automatic Audio Routing Echo Guard
     effect(() => {
       const dest = this.audioDestination();
+      const viewers = this.viewersCount();
       if (this.isViewerMode) {
         // Clean Feed / POC mode: unmute only if destination is 'remote'
         this.studioState.isMuted.set(dest !== 'remote');
       } else {
-        // Studio workbench: mute if destination is 'remote'
-        this.studioState.isMuted.set(dest === 'remote');
+        // Studio workbench: only mute if destination is 'remote' AND there are remote viewers watching!
+        this.studioState.isMuted.set(dest === 'remote' && viewers > 0);
       }
     });
   }

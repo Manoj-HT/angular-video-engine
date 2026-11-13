@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RootFrameService } from '@angular-video/core';
 import { StudioStateService, ZoomMode } from '../services/studio-state.service';
+import { StudioAudioService } from '../services/studio-audio.service';
 
 @Component({
   selector: 'ave-transport-bar',
@@ -24,7 +25,7 @@ import { StudioStateService, ZoomMode } from '../services/studio-state.service';
         
         <button
           class="ave-btn ave-btn-primary ave-btn-play"
-          (click)="state.togglePlay()"
+          (click)="handlePlayClick()"
           [title]="state.activeComposition() ? 'Play/Pause (Space)' : ''"
         >
           {{ frameService.isPlaying() ? '⏸' : '▶' }}
@@ -128,14 +129,20 @@ import { StudioStateService, ZoomMode } from '../services/studio-state.service';
           <option [value]="2.0">200%</option>
         </select>
 
-        <!-- Audio Mute -->
-        <button
-          class="ave-btn ave-btn-icon"
-          (click)="state.toggleMute()"
-          [title]="state.isMuted() ? 'Unmute' : 'Mute'"
-        >
-          {{ state.isMuted() ? '🔇' : '🔊' }}
-        </button>
+        <!-- Audio Mute & Activity Status Indicator -->
+        <div class="ave-audio-status-box" [title]="state.isMuted() ? 'Audio Muted' : (audio.isPlayingAudio() ? 'Audio Live' : 'Audio Ready')">
+          <button
+            class="ave-btn ave-btn-icon ave-audio-btn"
+            [class.muted]="state.isMuted()"
+            (click)="state.toggleMute()"
+            [title]="state.isMuted() ? 'Unmute (M)' : 'Mute (M)'"
+          >
+            {{ state.isMuted() ? '🔇' : (audio.isPlayingAudio() ? '🔊' : '🔈') }}
+          </button>
+          @if (!state.isMuted() && audio.isPlayingAudio()) {
+            <span class="ave-audio-live-pill">LIVE</span>
+          }
+        </div>
 
         <!-- In-Tab Fullscreen -->
         <button
@@ -342,11 +349,42 @@ import { StudioStateService, ZoomMode } from '../services/studio-state.service';
         border-color: #3e4262;
       }
     }
+
+    .ave-audio-status-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .ave-audio-live-pill {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      animation: aveAudioPulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes aveAudioPulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
   `]
 })
 export class AveTransportBarComponent {
   protected frameService = inject(RootFrameService);
   protected state = inject(StudioStateService);
+  protected audio = inject(StudioAudioService);
+
+  handlePlayClick(): void {
+    if (!this.frameService.isPlaying()) {
+      this.audio.resumeAudio();
+    }
+    this.state.togglePlay();
+  }
 
   readonly formattedTimecode = computed<string>(() => {
     const frame = this.frameService.frame();

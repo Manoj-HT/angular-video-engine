@@ -23,6 +23,7 @@ export class StudioAudioService implements OnDestroy {
   private sync = inject(PresentationSyncService);
 
   readonly isCleanFeedMode = signal<boolean>(false);
+  readonly isPlayingAudio = signal<boolean>(false);
   private managedTracks: ManagedAudioTrack[] = [];
   private currentCompId = '';
 
@@ -30,6 +31,15 @@ export class StudioAudioService implements OnDestroy {
     // Expose for testing and external host integration
     if (typeof window !== 'undefined') {
       (window as any).__AVE_AUDIO_ENGINE = this;
+
+      // Unlock browser audio context on any user gesture
+      const unlock = () => {
+        if (this.frameService.isPlaying()) {
+          this.resumeAudio();
+        }
+      };
+      window.addEventListener('pointerdown', unlock, { passive: true });
+      window.addEventListener('keydown', unlock, { passive: true });
     }
 
     effect(() => {
@@ -53,6 +63,26 @@ export class StudioAudioService implements OnDestroy {
     this.isCleanFeedMode.set(enabled);
   }
 
+  /**
+   * Immediately resumes active audio tracks within a synchronous user gesture
+   * to guarantee browser autoplay activation.
+   */
+  resumeAudio(): void {
+    const frame = this.frameService.frame();
+    const fps = this.frameService.config().fps || 30;
+
+    for (const track of this.managedTracks) {
+      const inRange = frame >= track.item.from && frame < (track.item.from + track.item.duration);
+      if (inRange && track.audio.paused) {
+        const targetSec = (frame - track.item.from) / fps;
+        track.audio.currentTime = Math.max(0, targetSec);
+        track.audio.play().catch(e => {
+          console.warn('[AVE Audio] Autoplay wait:', e);
+        });
+      }
+    }
+  }
+
   getTracks(): ManagedAudioTrack[] {
     return this.managedTracks;
   }
@@ -62,8 +92,9 @@ export class StudioAudioService implements OnDestroy {
     for (const track of this.managedTracks) {
       try {
         track.audio.pause();
+        track.audio.oncanplaythrough = null;
+        track.audio.onerror = null;
         track.audio.src = '';
-        track.audio.load();
         track.audio.remove();
       } catch {}
     }
@@ -114,19 +145,27 @@ export class StudioAudioService implements OnDestroy {
     const destination = this.sync.audioDestination();
     const isStudioMuted = this.studioState.isMuted();
     const isCleanFeed = this.isCleanFeedMode();
+    const viewers = this.sync.viewersCount();
 
     // Echo Guard Routing Matrix:
     // - In Clean Feed mode: Muted UNLESS audioDestination === 'remote'
-    // - In Studio Workbench: Muted IF audioDestination === 'remote' OR studio muted
+    // - In Studio Workbench: Muted IF (destination === 'remote' AND remote viewers are watching) OR studio muted manually
+    const hasRemoteViewers = destination === 'remote' && viewers > 0;
     const isMuted = isCleanFeed
-      ? destination !== 'remote'
-      : (destination === 'remote' || isStudioMuted);
+      ? (destination !== 'remote' || viewers === 0)
+      : (hasRemoteViewers || isStudioMuted);
+
+    let hasActiveAudio = false;
 
     for (const track of this.managedTracks) {
       const { item, audio } = track;
       const startFrame = item.from;
       const endFrame = item.from + item.duration;
       const inRange = frame >= startFrame && frame < endFrame;
+
+      if (inRange && isPlaying && !isMuted) {
+        hasActiveAudio = true;
+      }
 
       const baseVolume = typeof item.volume === 'number' ? item.volume : 1.0;
       audio.volume = isMuted ? 0 : Math.max(0, Math.min(1, baseVolume));
@@ -168,6 +207,8 @@ export class StudioAudioService implements OnDestroy {
         }
       }
     }
+
+    this.isPlayingAudio.set(hasActiveAudio);
   }
 
   ngOnDestroy(): void {

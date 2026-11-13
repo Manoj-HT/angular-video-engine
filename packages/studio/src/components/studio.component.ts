@@ -158,10 +158,14 @@ export class AveStudioComponent implements OnInit, OnChanges {
   // Strict "No Browser Hijack" Keybinding Listener
   @HostListener('window:keydown', ['$event'])
   handleKeyboardShortcuts(e: KeyboardEvent): void {
-    // If the user is typing inside an input or textarea, never intercept
+    // If the user is typing inside an input, textarea or select, never intercept
     const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
     if (targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select') {
       return;
+    }
+    // If a button has focus, blur it so Space bar does not trigger a duplicate synthetic click
+    if (e.key === ' ' && targetTag === 'button') {
+      (e.target as HTMLElement)?.blur();
     }
 
     // Strictly whitelist system keys: Ctrl/Cmd + (R, I, P, W, T, etc.)
@@ -172,6 +176,9 @@ export class AveStudioComponent implements OnInit, OnChanges {
     switch (e.key) {
       case ' ':
         e.preventDefault();
+        if (!this.frameService.isPlaying()) {
+          this.audioService.resumeAudio();
+        }
         this.state.togglePlay();
         break;
 
