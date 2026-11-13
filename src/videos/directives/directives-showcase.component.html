@@ -1,0 +1,286 @@
+<div
+  class="directives-stage"
+  [style.--theme-color]="themeColor"
+  [style.--secondary-color]="secondaryColor"
+>
+  <!-- Background Audio Soundtrack -->
+  <ave-audio src="assets/audio/synthwave.mp3" [volume]="0.75" />
+
+  <!-- ================= PERSISTENT GLOBAL HUD & CSS SYNC LAYERS ================= -->
+  <!-- 1. Ambient Background Grid & Dynamic Center Glow -->
+  <div class="cyber-grid"></div>
+  <div class="ambient-radial-glow"></div>
+
+  <!-- 2. Dual Orbital Rings locked to frame time via aveSyncCss -->
+  <div class="hud-orbit-container">
+    <div class="hud-orbit-ring ring-outer" [aveSyncCss]="'hudOrbit'">
+      <div class="hud-satellite sat-1"></div>
+      <div class="hud-satellite sat-2"></div>
+    </div>
+    <div class="hud-orbit-ring ring-inner" [aveSyncCss]="'hudOrbitReverse'">
+      <div class="hud-satellite sat-3"></div>
+    </div>
+  </div>
+
+  <!-- 3. Radar Sweep Scanner locked to frame time via aveSyncCss -->
+  <div class="radar-scanner" [aveSyncCss]="'radarSweep'"></div>
+
+  <!-- 4. Global Top HUD Telemetry Bar -->
+  <header class="hud-top-bar">
+    <div class="hud-brand">
+      <span class="hud-pulse-dot"></span>
+      <span class="hud-title">AVE v1.0 • DIRECTIVE MATRIX</span>
+    </div>
+
+    <div class="hud-stats-group">
+      <div class="hud-stat-badge">
+        <span class="stat-k">FRAME:</span>
+        <span class="stat-v">{{ frame() }} / {{ config().durationInFrames }}</span>
+      </div>
+      <div class="hud-stat-badge stat-accent">
+        <span class="stat-k">PROGRESS:</span>
+        <span class="stat-v">{{ progressPct() }}%</span>
+      </div>
+      <div class="hud-stat-badge">
+        <span class="stat-k">PIPELINE:</span>
+        <span class="stat-v">ZONELESS SIGNALS</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ACT I: SPATIAL ENTRANCE & BENTO CARDS (Frames 0 - 120) ================= -->
+  <section
+    class="act-viewport"
+    [aveSequence]="{ from: 0, duration: 120, layout: 'absolute', postState: 'hidden' }"
+  >
+    <div class="act-inner act1-center">
+      <!-- Floating Pill Badge -->
+      <div
+        class="hero-pill-badge"
+        [aveAnimate]="{
+          range: [6, 36],
+          from: { opacity: 0, translateY: -30, scale: 0.8 },
+          to: { opacity: 1, translateY: 0, scale: 1 },
+          spring: { damping: 12, stiffness: 140 }
+        }"
+      >
+        <span class="pill-dot"></span>
+        <span class="pill-text">PROGRAMMATIC VIDEO RUNTIME</span>
+      </div>
+
+      <!-- Main Animated Title with Spring Physics -->
+      <h1
+        class="hero-main-title"
+        [aveAnimate]="{
+          range: [16, 56],
+          from: { opacity: 0, translateY: 50, scale: 0.92 },
+          to: { opacity: 1, translateY: 0, scale: 1 },
+          spring: { damping: 14, stiffness: 110 }
+        }"
+      >
+        NEXT-GEN VIDEO
+        <span class="gradient-text">DIRECTIVES</span>
+      </h1>
+
+      <p
+        class="hero-subtitle"
+        [aveAnimate]="{
+          range: [32, 68],
+          from: { opacity: 0, translateY: 24 },
+          to: { opacity: 0.95, translateY: 0 },
+          spring: { damping: 16 }
+        }"
+      >
+        {{ tagline }}
+      </p>
+
+      <!-- Staggered Bento Directive Cards Grid -->
+      <div class="bento-cards-grid">
+        @for (card of features; track card.badge; let i = $index) {
+          <div
+            class="bento-card"
+            [style.--card-accent]="card.accent"
+            [aveAnimate]="{
+              range: [45, 85],
+              stagger: staggerFn,
+              index: i,
+              total: features.length,
+              preState: 'hidden',
+              from: { opacity: 0, translateY: 40, scale: 0.88 },
+              to: { opacity: 1, translateY: 0, scale: 1 },
+              spring: { damping: 12, stiffness: 120 }
+            }"
+          >
+            <div class="card-header">
+              <span class="card-icon">{{ card.icon }}</span>
+              <span class="card-badge">[{{ card.badge }}]</span>
+            </div>
+            <h3 class="card-heading">{{ card.title }}</h3>
+            <p class="card-description">{{ card.desc }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ACT II: MEDIA PIPELINE & HOLOGRAM DISPLAY (Frames 115 - 245) ================= -->
+  <section
+    class="act-viewport"
+    [aveSequence]="{ from: 115, duration: 130, layout: 'absolute', postState: 'hidden' }"
+  >
+    <div class="act-inner act2-split">
+      <!-- Left Column: Holographic Video Screen -->
+      <div
+        class="media-deck-panel"
+        [aveAnimate]="{
+          range: [6, 46],
+          from: { opacity: 0, translateX: -60, scale: 0.9 },
+          to: { opacity: 1, translateX: 0, scale: 1 },
+          spring: { damping: 14, stiffness: 100 }
+        }"
+      >
+        <div class="deck-titlebar">
+          <div class="deck-signal-indicator">
+            <span class="deck-lamp"></span>
+            <span class="deck-title-text">&lt;ave-video&gt; FEED</span>
+          </div>
+          <span class="deck-tag">60 FPS DETERMINISTIC SEEK</span>
+        </div>
+
+        <div class="deck-screen-viewport">
+          <ave-video src="assets/videos/demo.mp4" [volume]="0" />
+          <div class="screen-scanline-fx"></div>
+          <div class="screen-corner-brackets">
+            <span class="c-tl"></span><span class="c-tr"></span>
+            <span class="c-bl"></span><span class="c-br"></span>
+          </div>
+        </div>
+
+        <div class="deck-caption-bar">
+          <span class="caption-item">TARGET: /assets/videos/demo.mp4</span>
+          <span class="caption-item accent-text">ZERO COMPILATION DRIFT</span>
+        </div>
+      </div>
+
+      <!-- Right Column: Media Preview Card + Telemetry -->
+      <div class="telemetry-deck-panel">
+        <!-- Floating Image Card using <ave-image> -->
+        <div
+          class="image-preview-card"
+          [aveAnimate]="{
+            range: [20, 60],
+            from: { opacity: 0, translateX: 60, scale: 0.9 },
+            to: { opacity: 1, translateX: 0, scale: 1 },
+            spring: { damping: 13, stiffness: 110 }
+          }"
+        >
+          <div class="image-thumb-wrapper">
+            <ave-image src="assets/images/kinetic-preview.png" [fit]="'cover'" />
+          </div>
+          <div class="image-meta-info">
+            <span class="meta-tag">&lt;ave-image&gt; PRELOAD GATE</span>
+            <h4 class="meta-title">Kinetic Preview Asset</h4>
+            <p class="meta-sub">Synchronously decoded before frame export</p>
+          </div>
+        </div>
+
+        <!-- Telemetry Performance Grid with Stagger -->
+        <div class="metrics-dashboard-grid">
+          @for (m of metrics; track m.label; let mi = $index) {
+            <div
+              class="metric-tile"
+              [aveAnimate]="{
+                range: [38, 75],
+                stagger: staggerFn,
+                index: mi,
+                total: metrics.length,
+                preState: 'hidden',
+                from: { opacity: 0, translateY: 24 },
+                to: { opacity: 1, translateY: 0 },
+                spring: { damping: 15 }
+              }"
+            >
+              <span class="metric-key">{{ m.label }}</span>
+              <span class="metric-val">{{ m.value }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ACT III: CODE TERMINAL & CTA FINALE (Frames 240 - 360) ================= -->
+  <section
+    class="act-viewport"
+    [aveSequence]="{ from: 240, duration: 120, layout: 'absolute', postState: 'clamp' }"
+  >
+    <div class="act-inner act3-center">
+      <!-- Animated Code Terminal Card -->
+      <div
+        class="code-terminal-card"
+        [aveAnimate]="{
+          range: [6, 46],
+          from: { opacity: 0, translateY: 40, scale: 0.92 },
+          to: { opacity: 1, translateY: 0, scale: 1 },
+          spring: { damping: 13, stiffness: 120 }
+        }"
+      >
+        <div class="terminal-bar">
+          <div class="window-controls">
+            <span class="w-dot dot-r"></span>
+            <span class="w-dot dot-y"></span>
+            <span class="w-dot dot-g"></span>
+          </div>
+          <span class="file-name">composition.component.html</span>
+          <span class="file-badge">NATIVE ANGULAR</span>
+        </div>
+
+        <div class="terminal-editor">
+          @for (line of codeSnippets; track line; let ci = $index) {
+            <div
+              class="editor-line"
+              [aveAnimate]="{
+                range: [20 + ci * 8, 45 + ci * 8],
+                from: { opacity: 0, translateX: -20 },
+                to: { opacity: 1, translateX: 0 }
+              }"
+            >
+              <span class="line-index">{{ ci + 1 }}</span>
+              <span class="line-content">
+                <code>{{ line }}</code>
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Finale Big CTA Pill & Button -->
+      <div
+        class="finale-cta-wrapper"
+        [aveAnimate]="{
+          range: [44, 84],
+          from: { opacity: 0, scale: 0.85, translateY: 30 },
+          to: { opacity: 1, scale: 1, translateY: 0 },
+          spring: { damping: 11, stiffness: 130 }
+        }"
+      >
+        <div class="terminal-cta-pill">
+          <span class="cta-sparkle">🚀</span>
+          <span class="cta-cli-cmd">npx @angular-video/cli create my-video</span>
+        </div>
+        <h2 class="finale-big-heading">THE WEB RUNTIME FOR PROGRAMMATIC VIDEO</h2>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GLOBAL BOTTOM STATUS BAR ================= -->
+  <footer class="hud-bottom-bar">
+    <div class="status-indicator">
+      <span class="live-dot"></span>
+      <span>RENDER MATRIX ACTIVE</span>
+    </div>
+    <div class="timecode-display">
+      <span>TIMECODE 00:{{ frame() < 300 ? ('0' + (frame() / 30 | number:'1.0-0')) : (frame() / 30 | number:'1.0-0') }}:{{ (frame() % 30) < 10 ? '0' : '' }}{{ frame() % 30 }}</span>
+    </div>
+  </footer>
+</div>

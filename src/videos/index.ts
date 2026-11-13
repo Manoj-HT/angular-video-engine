@@ -1,8 +1,57 @@
 import { defineCompositions, VideoMetadata } from '@angular-video/core';
 import { KineticShowcaseComponent, KineticShowcaseProps } from './kinetic/kinetic-showcase.component';
 import { AppDemoSceneComponent, DemoVideoProps } from './demo/demo-scene.component';
+import { DirectivesShowcaseComponent, DirectivesShowcaseProps } from './directives/directives-showcase.component';
 
 export const videoCompositions: VideoMetadata[] = defineCompositions([
+  {
+    id: 'DirectivesShowcase',
+    title: 'AVE Directives & FX Showcase (12s)',
+    renderName: 'ave_directives_showcase',
+    component: DirectivesShowcaseComponent,
+    durationInFrames: 360, // 12.0s at 30 fps
+    fps: 30,
+    width: 1920,
+    height: 1080,
+    defaultProps: <DirectivesShowcaseProps>{
+      title: 'NEXT-GEN VIDEO DIRECTIVES',
+      tagline: 'Deterministic, Frame-Accurate Programmatic Video Runtime',
+      themeColor: '#00d2ff',
+      secondaryColor: '#7c4dff'
+    },
+    tracks: [
+      {
+        id: 'track-act1-bento',
+        name: 'Act I: Spatial Bento Entrance',
+        type: 'overlay',
+        items: [{ id: 'act1-bento', from: 0, duration: 120, component: DirectivesShowcaseComponent }]
+      },
+      {
+        id: 'track-act2-media',
+        name: 'Act II: Media Deck & ave-video',
+        type: 'video',
+        items: [{ id: 'act2-media-deck', from: 115, duration: 130, component: DirectivesShowcaseComponent }]
+      },
+      {
+        id: 'track-act3-terminal',
+        name: 'Act III: Code Terminal & CTA',
+        type: 'overlay',
+        items: [{ id: 'act3-terminal', from: 240, duration: 120, component: DirectivesShowcaseComponent }]
+      },
+      {
+        id: 'track-hud-css-sync',
+        name: 'HUD Radar & Orbit (aveSyncCss)',
+        type: 'video',
+        items: [{ id: 'hud-radar', from: 0, duration: 360, component: DirectivesShowcaseComponent }]
+      },
+      {
+        id: 'track-audio-synthwave',
+        name: 'Synthwave Soundtrack',
+        type: 'audio',
+        items: [{ from: 0, duration: 360, src: 'assets/audio/synthwave.mp3', volume: 0.75 }]
+      }
+    ]
+  },
   {
     id: 'KineticShowcase',
     title: 'Kinetic Motion Showcase (20s)',
