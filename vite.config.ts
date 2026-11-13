@@ -2,6 +2,7 @@ import { defineConfig, Plugin } from 'vite';
 import angular from '@analogjs/vite-plugin-angular';
 import path from 'path';
 import { WebSocketServer, WebSocket } from 'ws';
+import { updateCompositionInFile } from './packages/studio/src/server/composition-writer';
 
 function aveWebSocketPlugin(): Plugin {
   let wss: WebSocketServer | null = null;
@@ -20,6 +21,36 @@ function aveWebSocketPlugin(): Plugin {
   return {
     name: 'ave-websocket-server',
     configureServer(server) {
+      // Direct API endpoint for Video Properties backend code writing
+      server.middlewares.use('/api/composition', (req, res, next) => {
+        if (req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const data = JSON.parse(body);
+              const { id, width, height, fps, durationInFrames } = data;
+              if (!id) {
+                res.statusCode = 400;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: false, error: 'Missing composition id' }));
+                return;
+              }
+              const result = updateCompositionInFile(id, { width, height, fps, durationInFrames }, import.meta.dirname);
+              res.statusCode = result.success ? 200 : 404;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(result));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: false, error: err?.message || String(err) }));
+            }
+          });
+          return;
+        }
+        next();
+      });
+
       if (!server.httpServer) return;
 
       wss = new WebSocketServer({ noServer: true });
@@ -96,6 +127,9 @@ function aveWebSocketPlugin(): Plugin {
             if (msg.type === 'PROPS_UPDATE') sessionState.props = msg.props;
             if (msg.type === 'COMPOSITION_CHANGE') sessionState.activeCompositionId = msg.id;
             if (msg.type === 'AUDIO_DESTINATION') sessionState.audioDestination = msg.destination;
+            if (msg.type === 'UPDATE_COMPOSITION_METADATA') {
+              updateCompositionInFile(msg.id, msg.metadata, import.meta.dirname);
+            }
             if (msg.type === 'LOOP_CHANGE') {
               sessionState.loopStart = msg.loopStart;
               sessionState.loopEnd = msg.loopEnd;

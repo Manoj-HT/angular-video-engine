@@ -1,6 +1,7 @@
 {
   "name": "@angular-video/studio",
   "version": "0.1.0",
+  "type": "module",
   "description": "Canvas-first workbench, interactive timeline, and inspector for Angular Video Engine",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

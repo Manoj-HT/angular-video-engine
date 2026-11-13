@@ -25,8 +25,14 @@ export class StudioStateService {
   readonly activeProps = signal<Record<string, unknown>>({});
 
   // Tools & Drawer View Management
-  readonly activeTool = signal<string>('inspector');
+  readonly activeTool = signal<string>('videoProperties');
   readonly isToolsSearchOpen = signal<boolean>(false);
+
+  // Persistence to Code Status
+  readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  private saveDebounceTimer: any = null;
+  private saveFeedbackTimer: any = null;
+  private pendingCompositionUpdates: { width?: number; height?: number; fps?: number; durationInFrames?: number } = {};
 
   // Workbench UI state
   readonly zoomMode = signal<ZoomMode>('fit');
@@ -170,6 +176,86 @@ export class StudioStateService {
       ...prev,
       [key]: value
     }));
+  }
+
+  updateCompositionDetails(updates: { width?: number; height?: number; fps?: number; durationInFrames?: number }): void {
+    const active = this.activeComposition();
+    if (!active) return;
+    const compId = active.id;
+
+    // 1. Immediately update in-memory composition signal
+    this.compositions.update(list => list.map(c => {
+      if (c.id === compId) {
+        return {
+          ...c,
+          ...updates
+        };
+      }
+      return c;
+    }));
+
+    // Accumulate pending updates across rapid user inputs
+    this.pendingCompositionUpdates = {
+      ...this.pendingCompositionUpdates,
+      ...updates
+    };
+
+    // 2. Immediately sync RootFrameService for stage and timeline
+    const updatedComp = this.activeComposition();
+    if (updatedComp) {
+      this.frameService.setConfig({
+        fps: updatedComp.fps,
+        width: updatedComp.width,
+        height: updatedComp.height,
+        durationInFrames: updatedComp.durationInFrames
+      });
+      // Clamp current frame if duration was shortened
+      if (this.frameService.frame() >= updatedComp.durationInFrames) {
+        this.frameService.setFrame(Math.max(0, updatedComp.durationInFrames - 1));
+      }
+      // Clamp loop work area
+      if (this.loopEnd() !== null && this.loopEnd()! >= updatedComp.durationInFrames) {
+        this.loopEnd.set(Math.max(0, updatedComp.durationInFrames - 1));
+      }
+    }
+
+    // 3. Debounced persist directly to the video composition file via backend
+    this.saveStatus.set('saving');
+    if (this.saveDebounceTimer) clearTimeout(this.saveDebounceTimer);
+    this.saveDebounceTimer = setTimeout(() => {
+      const toSend = { ...this.pendingCompositionUpdates };
+      this.pendingCompositionUpdates = {};
+      this.persistCompositionToCode(compId, toSend);
+    }, 400);
+  }
+
+  private async persistCompositionToCode(
+    id: string,
+    updates: { width?: number; height?: number; fps?: number; durationInFrames?: number }
+  ): Promise<void> {
+    try {
+      const res = await fetch('/api/composition', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updates })
+      });
+      const data = await res.json();
+      if (data.success) {
+        this.saveStatus.set('saved');
+        if (this.saveFeedbackTimer) clearTimeout(this.saveFeedbackTimer);
+        this.saveFeedbackTimer = setTimeout(() => {
+          if (this.saveStatus() === 'saved') {
+            this.saveStatus.set('idle');
+          }
+        }, 2500);
+      } else {
+        console.error('[AVE] Failed to save composition to code:', data.error);
+        this.saveStatus.set('error');
+      }
+    } catch (err) {
+      console.error('[AVE] Network error saving composition to code:', err);
+      this.saveStatus.set('error');
+    }
   }
 
   togglePlay(): void {

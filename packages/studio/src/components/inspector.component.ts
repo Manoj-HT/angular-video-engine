@@ -113,23 +113,129 @@ export interface StudioToolItem {
           </button>
         </div>
 
-        @if (state.activeTool() === 'inspector') {
-          <!-- Composition Metadata Card -->
+        @if (isPropertiesTool()) {
+          <!-- Composition Metadata Card: Video Properties -->
           @if (state.activeComposition(); as comp) {
             <div class="ave-section">
-              <div class="ave-section-title">Composition Details</div>
-              <div class="ave-meta-grid">
-                <div class="ave-meta-item">
-                  <span class="ave-meta-label">Dimensions</span>
-                  <span class="ave-meta-val">{{ comp.width }} × {{ comp.height }}</span>
+              <div class="ave-section-header-row">
+                <div class="ave-section-title">Video Properties</div>
+                @if (state.saveStatus() === 'saving') {
+                  <span class="ave-save-badge ave-save-saving" title="Saving changes directly to video composition file">
+                    <span class="ave-spin-dot">●</span> Saving...
+                  </span>
+                } @else if (state.saveStatus() === 'saved') {
+                  <span class="ave-save-badge ave-save-saved" title="Changes synced directly into code">
+                    ✓ Synced to code
+                  </span>
+                } @else if (state.saveStatus() === 'error') {
+                  <span class="ave-save-badge ave-save-error" title="Failed to write to file">
+                    ⚠️ Error saving
+                  </span>
+                }
+              </div>
+
+              <!-- Dimensions (Width & Height) -->
+              <div class="ave-comp-prop-field">
+                <div class="ave-comp-prop-label-row">
+                  <span class="ave-prop-label">Dimensions</span>
+                  <span class="ave-aspect-pill">{{ getAspectRatio(comp.width, comp.height) }}</span>
                 </div>
-                <div class="ave-meta-item">
-                  <span class="ave-meta-label">FPS</span>
-                  <span class="ave-meta-val">{{ comp.fps }}</span>
+                <div class="ave-dimensions-grid">
+                  <div class="ave-input-with-affix">
+                    <span class="ave-input-prefix">W</span>
+                    <input
+                      type="number"
+                      class="ave-dim-input"
+                      [value]="comp.width"
+                      min="16"
+                      max="7680"
+                      step="2"
+                      (input)="onDimensionChange('width', $event)"
+                      title="Width in pixels"
+                    />
+                    <span class="ave-input-suffix">px</span>
+                  </div>
+                  <span class="ave-dim-divider">×</span>
+                  <div class="ave-input-with-affix">
+                    <span class="ave-input-prefix">H</span>
+                    <input
+                      type="number"
+                      class="ave-dim-input"
+                      [value]="comp.height"
+                      min="16"
+                      max="7680"
+                      step="2"
+                      (input)="onDimensionChange('height', $event)"
+                      title="Height in pixels"
+                    />
+                    <span class="ave-input-suffix">px</span>
+                  </div>
                 </div>
-                <div class="ave-meta-item">
-                  <span class="ave-meta-label">Duration</span>
-                  <span class="ave-meta-val">{{ comp.durationInFrames }} frames ({{ (comp.durationInFrames / comp.fps).toFixed(1) }}s)</span>
+                <!-- Quick Preset Pills -->
+                <div class="ave-preset-pills">
+                  <button type="button" class="ave-pill-btn" [class.active]="comp.width === 1920 && comp.height === 1080" (click)="applyResolution(1920, 1080)">1080p</button>
+                  <button type="button" class="ave-pill-btn" [class.active]="comp.width === 3840 && comp.height === 2160" (click)="applyResolution(3840, 2160)">4K</button>
+                  <button type="button" class="ave-pill-btn" [class.active]="comp.width === 1080 && comp.height === 1920" (click)="applyResolution(1080, 1920)">9:16 Reel</button>
+                  <button type="button" class="ave-pill-btn" [class.active]="comp.width === 1080 && comp.height === 1080" (click)="applyResolution(1080, 1080)">1:1 Square</button>
+                </div>
+              </div>
+
+              <!-- FPS (Frame Rate) -->
+              <div class="ave-comp-prop-field">
+                <div class="ave-comp-prop-label-row">
+                  <span class="ave-prop-label">Frame Rate (FPS)</span>
+                  <span class="ave-fps-hint">{{ (1000 / comp.fps).toFixed(1) }}ms / frame</span>
+                </div>
+                <div class="ave-fps-row">
+                  <input
+                    type="number"
+                    class="ave-fps-input"
+                    [value]="comp.fps"
+                    min="1"
+                    max="120"
+                    step="1"
+                    (input)="onFpsChange($event)"
+                    title="Frames per second"
+                  />
+                  <div class="ave-preset-pills">
+                    <button type="button" class="ave-pill-btn" [class.active]="comp.fps === 24" (click)="applyFps(24)">24</button>
+                    <button type="button" class="ave-pill-btn" [class.active]="comp.fps === 30" (click)="applyFps(30)">30</button>
+                    <button type="button" class="ave-pill-btn" [class.active]="comp.fps === 60" (click)="applyFps(60)">60</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Duration with frames / seconds dropdown -->
+              <div class="ave-comp-prop-field">
+                <div class="ave-comp-prop-label-row">
+                  <span class="ave-prop-label">Duration</span>
+                  <span class="ave-duration-alt-hint">
+                    @if (durationUnit() === 'frames') {
+                      ≈ {{ (comp.durationInFrames / comp.fps).toFixed(2) }}s
+                    } @else {
+                      = {{ comp.durationInFrames }} frames
+                    }
+                  </span>
+                </div>
+                <div class="ave-duration-row">
+                  <input
+                    type="number"
+                    class="ave-duration-input"
+                    [value]="durationUnit() === 'frames' ? comp.durationInFrames : durationInSeconds()"
+                    [min]="durationUnit() === 'frames' ? 1 : 0.1"
+                    [step]="durationUnit() === 'frames' ? 1 : 0.5"
+                    (input)="onDurationValueChange($event)"
+                    title="Duration in selected unit"
+                  />
+                  <select
+                    class="ave-unit-select"
+                    [value]="durationUnit()"
+                    (change)="onDurationUnitChange($event)"
+                    title="Select duration unit (frames or seconds)"
+                  >
+                    <option value="frames">Frames</option>
+                    <option value="seconds">Seconds</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -197,8 +303,8 @@ export interface StudioToolItem {
             <p class="ave-tool-placeholder-desc">{{ currentTool().description }}</p>
             <div class="ave-tool-placeholder-status">
               <span class="ave-tag ave-tag-planned">Tool Ready Soon</span>
-              <button class="ave-btn-subtle ave-tool-back-btn" (click)="state.selectTool('inspector')">
-                Back to Inspector
+              <button class="ave-btn-subtle ave-tool-back-btn" (click)="state.selectTool('videoProperties')">
+                Back to Video Properties
               </button>
             </div>
           </div>
@@ -583,7 +689,241 @@ export interface StudioToolItem {
       letter-spacing: 0.5px;
       font-weight: 700;
       color: #94a3b8;
-      margin-bottom: 10px;
+      margin: 0;
+    }
+
+    /* Section Header with Save Status */
+    .ave-section-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .ave-save-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      letter-spacing: 0.3px;
+    }
+
+    .ave-save-saving {
+      background: rgba(234, 179, 8, 0.15);
+      color: #eab308;
+      border: 1px solid rgba(234, 179, 8, 0.3);
+
+      .ave-spin-dot {
+        display: inline-block;
+        animation: avePulse 0.8s infinite alternate;
+      }
+    }
+
+    .ave-save-saved {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .ave-save-error {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    @keyframes avePulse {
+      0% { opacity: 0.3; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* Video Properties Fields */
+    .ave-comp-prop-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+
+      &:last-child {
+        margin-bottom: 2px;
+      }
+    }
+
+    .ave-comp-prop-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .ave-prop-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .ave-aspect-pill {
+      font-size: 10px;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .ave-dimensions-grid {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ave-dim-divider {
+      color: #64748b;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .ave-input-with-affix {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: #10111a;
+      border: 1px solid #282a3e;
+      border-radius: 6px;
+      padding: 3px 8px;
+      transition: border-color 0.15s ease;
+
+      &:focus-within {
+        border-color: #38bdf8;
+      }
+    }
+
+    .ave-input-prefix {
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      margin-right: 4px;
+      user-select: none;
+    }
+
+    .ave-input-suffix {
+      font-size: 10px;
+      color: #64748b;
+      margin-left: 2px;
+      user-select: none;
+    }
+
+    .ave-dim-input, .ave-fps-input, .ave-duration-input {
+      flex: 1;
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: #f1f5f9;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+      padding: 2px 0;
+      min-width: 0;
+
+      &::-webkit-inner-spin-button,
+      &::-webkit-outer-spin-button {
+        opacity: 0.5;
+      }
+    }
+
+    .ave-preset-pills {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+
+    .ave-pill-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid #23263a;
+      border-radius: 4px;
+      color: #94a3b8;
+      font-size: 10px;
+      padding: 2px 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.09);
+        color: #f1f5f9;
+        border-color: #38bdf8;
+      }
+
+      &.active {
+        background: rgba(56, 189, 248, 0.15);
+        color: #38bdf8;
+        border-color: #38bdf8;
+        font-weight: 600;
+      }
+    }
+
+    .ave-fps-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .ave-fps-input {
+        width: 68px;
+        flex: 0 0 68px;
+        background: #10111a;
+        border: 1px solid #282a3e;
+        border-radius: 6px;
+        padding: 4px 8px;
+        color: #f1f5f9;
+        font-size: 12px;
+
+        &:focus {
+          border-color: #38bdf8;
+        }
+      }
+    }
+
+    .ave-fps-hint, .ave-duration-alt-hint {
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    .ave-duration-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      .ave-duration-input {
+        flex: 1;
+        background: #10111a;
+        border: 1px solid #282a3e;
+        border-radius: 6px;
+        padding: 4px 8px;
+        color: #f1f5f9;
+        font-size: 12px;
+
+        &:focus {
+          border-color: #38bdf8;
+        }
+      }
+
+      .ave-unit-select {
+        background: #181926;
+        border: 1px solid #282a3e;
+        border-radius: 6px;
+        color: #f1f5f9;
+        font-size: 11px;
+        padding: 5px 8px;
+        outline: none;
+        cursor: pointer;
+
+        &:focus {
+          border-color: #38bdf8;
+        }
+      }
     }
 
     .ave-meta-grid {
@@ -694,10 +1034,10 @@ export class AveInspectorComponent {
       ready: false
     },
     {
-      id: 'inspector',
-      name: 'Properties & Inspector',
+      id: 'videoProperties',
+      name: 'Video Properties',
       icon: '⚙️',
-      description: 'Composition schema props, dimensions, FPS, and dynamic component properties',
+      description: 'Composition dimensions, FPS, duration, and dynamic component properties',
       category: 'Core',
       ready: true
     },
@@ -776,7 +1116,9 @@ export class AveInspectorComponent {
       t.id.toLowerCase().includes(q) ||
       t.name.toLowerCase().includes(q) ||
       t.description.toLowerCase().includes(q) ||
-      t.category.toLowerCase().includes(q)
+      t.category.toLowerCase().includes(q) ||
+      (q === 'props' && (t.id === 'videoProperties' || t.name === 'Video Properties')) ||
+      (q === 'inspector' && (t.id === 'videoProperties' || t.name === 'Video Properties'))
     );
     return Array.from(new Set(matches)).sort((a, b) =>
       a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
@@ -786,11 +1128,24 @@ export class AveInspectorComponent {
   // Currently active tool item metadata
   readonly currentTool = computed<StudioToolItem>(() => {
     const id = this.state.activeTool();
-    return this.tools.find(t => t.id === id) ?? this.tools.find(t => t.id === 'inspector') ?? this.tools[0];
+    return this.tools.find(t => t.id === id) ??
+      (id === 'inspector' ? this.tools.find(t => t.id === 'videoProperties') : null) ??
+      this.tools.find(t => t.id === 'videoProperties') ??
+      this.tools[0];
   });
 
   readonly propKeys = computed<string[]>(() => {
     return Object.keys(this.state.activeProps());
+  });
+
+  // Duration unit toggle: 'frames' | 'seconds'
+  readonly durationUnit = signal<'frames' | 'seconds'>('frames');
+
+  // Computed duration in seconds
+  readonly durationInSeconds = computed<number>(() => {
+    const comp = this.state.activeComposition();
+    if (!comp || comp.fps <= 0) return 0;
+    return Number((comp.durationInFrames / comp.fps).toFixed(2));
   });
 
   constructor() {
@@ -804,9 +1159,72 @@ export class AveInspectorComponent {
     });
   }
 
+  isPropertiesTool(): boolean {
+    const id = this.state.activeTool();
+    return id === 'videoProperties' || id === 'inspector';
+  }
+
   selectTool(toolId: string): void {
     this.state.selectTool(toolId);
     this.searchQuery.set('');
+  }
+
+  onDimensionChange(dimension: 'width' | 'height', event: Event): void {
+    const val = parseInt((event.target as HTMLInputElement).value, 10);
+    if (!isNaN(val) && val >= 16 && val <= 7680) {
+      this.state.updateCompositionDetails({ [dimension]: val });
+    }
+  }
+
+  applyResolution(width: number, height: number): void {
+    this.state.updateCompositionDetails({ width, height });
+  }
+
+  onFpsChange(event: Event): void {
+    const val = parseInt((event.target as HTMLInputElement).value, 10);
+    if (!isNaN(val) && val >= 1 && val <= 120) {
+      this.state.updateCompositionDetails({ fps: val });
+    }
+  }
+
+  applyFps(fps: number): void {
+    this.state.updateCompositionDetails({ fps });
+  }
+
+  onDurationUnitChange(event: Event): void {
+    const unit = (event.target as HTMLSelectElement).value as 'frames' | 'seconds';
+    this.durationUnit.set(unit);
+  }
+
+  onDurationValueChange(event: Event): void {
+    const comp = this.state.activeComposition();
+    if (!comp) return;
+    const raw = parseFloat((event.target as HTMLInputElement).value);
+    if (isNaN(raw) || raw <= 0) return;
+
+    if (this.durationUnit() === 'frames') {
+      const frames = Math.max(1, Math.round(raw));
+      this.state.updateCompositionDetails({ durationInFrames: frames });
+    } else {
+      const frames = Math.max(1, Math.round(raw * comp.fps));
+      this.state.updateCompositionDetails({ durationInFrames: frames });
+    }
+  }
+
+  getAspectRatio(width: number, height: number): string {
+    const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+    const divisor = gcd(width, height);
+    const wRatio = width / divisor;
+    const hRatio = height / divisor;
+    if (
+      (wRatio === 16 && hRatio === 9) ||
+      (wRatio === 9 && hRatio === 16) ||
+      (wRatio === 1 && hRatio === 1) ||
+      (wRatio === 4 && hRatio === 3)
+    ) {
+      return `${wRatio}:${hRatio}`;
+    }
+    return `${(width / height).toFixed(2)}:1`;
   }
 
   getPropType(key: string): 'color' | 'boolean' | 'number' | 'string' {

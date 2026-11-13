@@ -7,7 +7,7 @@ export const videoCompositions: VideoMetadata[] = defineCompositions([
     id: 'KineticShowcase',
     title: 'Kinetic Motion Showcase (20s)',
     component: KineticShowcaseComponent,
-    durationInFrames: 600, // 20 seconds at 30 fps
+    durationInFrames: 600, // 20.0s at 30 fps
     fps: 30,
     width: 1920,
     height: 1080,
@@ -134,3 +134,7 @@ export const videoCompositions: VideoMetadata[] = defineCompositions([
 ]);
 
 export default videoCompositions;
+
+if ((import.meta as any).hot) {
+  (import.meta as any).hot.accept();
+}
