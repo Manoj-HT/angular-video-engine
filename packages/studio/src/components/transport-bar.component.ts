@@ -158,7 +158,7 @@ import { StudioAudioService } from '../services/studio-audio.service';
           class="ave-btn"
           [class.ave-btn-active]="state.isDrawerOpen()"
           (click)="state.toggleDrawer()"
-          title="Toggle Properties & Inspector"
+          title="Toggle Tools Drawer (Shift+T to browse all tools)"
         >
           ⚙ Tools
         </button>

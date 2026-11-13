@@ -192,14 +192,25 @@ export class AveStudioComponent implements OnInit, OnChanges {
   // Strict "No Browser Hijack" Keybinding Listener
   @HostListener('window:keydown', ['$event'])
   handleKeyboardShortcuts(e: KeyboardEvent): void {
-    // If the user is typing inside an input, textarea or select, never intercept
+    // If the user is typing inside an input, textarea or select, never intercept normal typing
     const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
     if (targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select') {
+      if (e.key === 'Escape' && this.state.isToolsSearchOpen()) {
+        (e.target as HTMLElement)?.blur();
+        this.state.closeToolsList();
+      }
       return;
     }
     // If a button has focus, blur it so Space bar does not trigger a duplicate synthetic click
     if (e.key === ' ' && targetTag === 'button') {
       (e.target as HTMLElement)?.blur();
+    }
+
+    // Shift + T: Toggle / Open Searchable Tools List
+    if (e.shiftKey && (e.key === 'T' || e.key === 't')) {
+      e.preventDefault();
+      this.state.openToolsList();
+      return;
     }
 
     // Strictly whitelist system keys: Ctrl/Cmd + (R, I, P, W, T, etc.)
@@ -208,6 +219,11 @@ export class AveStudioComponent implements OnInit, OnChanges {
     }
 
     switch (e.key) {
+      case 'Escape':
+        if (this.state.isToolsSearchOpen()) {
+          this.state.closeToolsList();
+        }
+        break;
       case ' ':
         e.preventDefault();
         if (!this.frameService.isPlaying()) {

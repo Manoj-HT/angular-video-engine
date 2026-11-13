@@ -24,6 +24,10 @@ export class StudioStateService {
   // Dynamic user props (overrides defaultProps for active composition)
   readonly activeProps = signal<Record<string, unknown>>({});
 
+  // Tools & Drawer View Management
+  readonly activeTool = signal<string>('inspector');
+  readonly isToolsSearchOpen = signal<boolean>(false);
+
   // Workbench UI state
   readonly zoomMode = signal<ZoomMode>('fit');
   readonly isDrawerOpen = signal<boolean>(false);
@@ -219,7 +223,34 @@ export class StudioStateService {
   }
 
   toggleDrawer(): void {
-    this.isDrawerOpen.set(!this.isDrawerOpen());
+    const nextState = !this.isDrawerOpen();
+    this.isDrawerOpen.set(nextState);
+    if (!nextState) {
+      this.isToolsSearchOpen.set(false);
+    }
+  }
+
+  openToolsList(): void {
+    this.isDrawerOpen.set(true);
+    this.isToolsSearchOpen.set(true);
+  }
+
+  closeToolsList(): void {
+    this.isToolsSearchOpen.set(false);
+  }
+
+  toggleToolsList(): void {
+    if (!this.isDrawerOpen()) {
+      this.isDrawerOpen.set(true);
+      this.isToolsSearchOpen.set(true);
+    } else {
+      this.isToolsSearchOpen.update(v => !v);
+    }
+  }
+
+  selectTool(toolId: string): void {
+    this.activeTool.set(toolId);
+    this.isToolsSearchOpen.set(false);
   }
 
   private startPlaybackLoop(): void {
