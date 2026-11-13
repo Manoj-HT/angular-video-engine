@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StudioStateService } from '../services/studio-state.service';
 import { RootFrameService } from '@angular-video/core';
+import { AveAssetLibraryComponent } from './asset-library.component';
 
 export interface StudioToolItem {
   id: string;
@@ -24,7 +25,7 @@ export interface StudioToolItem {
 @Component({
   selector: 'ave-inspector',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AveAssetLibraryComponent],
   template: `
     <div class="ave-inspector-panel">
       <!-- Searchable Tools List View -->
@@ -348,6 +349,8 @@ export interface StudioToolItem {
               </div>
             </div>
           }
+        } @else if (isAssetLibraryTool()) {
+          <ave-asset-library />
         } @else {
           <!-- Tool Placeholder Card for tools to be implemented (e.g. AI) -->
           <div class="ave-tool-placeholder-card">
@@ -1243,11 +1246,11 @@ export class AveInspectorComponent {
     },
     {
       id: 'assets',
-      name: 'Asset Gate & Media Library',
+      name: 'Asset Library',
       icon: '📁',
-      description: 'Preload readiness gate, audio soundtracks, SVG vectors, and video clips',
+      description: 'Grid & list media library, folder management, and drag-and-drop file upload',
       category: 'Media',
-      ready: false
+      ready: true
     },
     {
       id: 'telemetry',
@@ -1365,6 +1368,10 @@ export class AveInspectorComponent {
   isPropertiesTool(): boolean {
     const id = this.state.activeTool();
     return id === 'videoProperties' || id === 'inspector';
+  }
+
+  isAssetLibraryTool(): boolean {
+    return this.state.activeTool() === 'assets';
   }
 
   selectTool(toolId: string): void {

@@ -1,8 +1,16 @@
 import { defineConfig, Plugin } from 'vite';
 import angular from '@analogjs/vite-plugin-angular';
 import path from 'path';
+import fs from 'fs';
 import { WebSocketServer, WebSocket } from 'ws';
 import { updateCompositionInFile } from './packages/studio/src/server/composition-writer';
+import {
+  listAssets,
+  createFolder,
+  renameAsset,
+  deleteAsset,
+  getSafePath
+} from './packages/studio/src/server/asset-manager';
 
 function aveWebSocketPlugin(): Plugin {
   let wss: WebSocketServer | null = null;
@@ -52,6 +60,132 @@ function aveWebSocketPlugin(): Plugin {
           });
           return;
         }
+        next();
+      });
+
+      // Asset Library Management Endpoints
+      server.middlewares.use('/api/assets', (req, res, next) => {
+        const assetsBaseDir = path.resolve(import.meta.dirname, 'public/assets');
+        const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+        const pathname = url.pathname;
+
+        // 1. GET /api/assets?path=...
+        if (req.method === 'GET' && (pathname === '/' || pathname === '')) {
+          const relPath = url.searchParams.get('path') || '';
+          const result = listAssets(assetsBaseDir, relPath);
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(result));
+          return;
+        }
+
+        // 2. POST /api/assets/upload
+        if (req.method === 'POST' && pathname === '/upload') {
+          const rawRelPath = req.headers['x-asset-path'];
+          const relPath = typeof rawRelPath === 'string' ? decodeURIComponent(rawRelPath) : '';
+          const rawFileName = req.headers['x-asset-filename'];
+          const fileName = typeof rawFileName === 'string'
+            ? decodeURIComponent(rawFileName).trim().replace(/[\\/:*?"<>|]/g, '_')
+            : `asset-${Date.now()}`;
+
+          const targetDir = getSafePath(assetsBaseDir, relPath);
+          if (!targetDir) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: 'Invalid path' }));
+            return;
+          }
+
+          if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+          }
+
+          const targetFilePath = path.join(targetDir, fileName);
+          const writeStream = fs.createWriteStream(targetFilePath);
+
+          req.pipe(writeStream);
+
+          writeStream.on('finish', () => {
+            const relItem = path.relative(assetsBaseDir, targetFilePath).replace(/\\/g, '/');
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+              success: true,
+              file: {
+                name: fileName,
+                path: relItem,
+                url: `/assets/${relItem}`
+              }
+            }));
+          });
+
+          writeStream.on('error', (err) => {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          });
+          return;
+        }
+
+        // 3. POST /api/assets/folder
+        if (req.method === 'POST' && pathname === '/folder') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const { path: relPath, folderName } = JSON.parse(body);
+              const result = createFolder(assetsBaseDir, relPath || '', folderName);
+              res.statusCode = result.success ? 200 : 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(result));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 4. POST /api/assets/rename
+        if (req.method === 'POST' && pathname === '/rename') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const { oldPath, newName } = JSON.parse(body);
+              const result = renameAsset(assetsBaseDir, oldPath, newName);
+              res.statusCode = result.success ? 200 : 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(result));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+          return;
+        }
+
+        // 5. DELETE /api/assets
+        if (req.method === 'DELETE' && (pathname === '/' || pathname === '')) {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const data = body ? JSON.parse(body) : {};
+              const targetPath = data.path || url.searchParams.get('path') || '';
+              const result = deleteAsset(assetsBaseDir, targetPath);
+              res.statusCode = result.success ? 200 : 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(result));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+          return;
+        }
+
         next();
       });
 

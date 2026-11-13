@@ -10,5 +10,6 @@ export * from './components/canvas-stage.component';
 export * from './components/timeline.component';
 export * from './components/transport-bar.component';
 export * from './components/inspector.component';
+export * from './components/asset-library.component';
 export * from './components/studio-header.component';
 export * from './components/clean-feed.component';
