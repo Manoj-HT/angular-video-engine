@@ -100,93 +100,107 @@ export interface StudioToolItem {
           </div>
         </div>
       } @else {
-        <!-- Active Tool View: Properties & Inspector -->
-        <!-- Panel Header with Chevron Down Tool Switcher -->
+        <!-- Active Tool View Header with Tool Switcher -->
         <div class="ave-inspector-header">
           <button
             class="ave-tool-switch-btn"
             (click)="state.toggleToolsList()"
             title="Browse all tools (Shift+T)"
           >
-            <span class="ave-tool-badge-icon">⚙️</span>
-            <h3 class="ave-inspector-title">Properties & Inspector</h3>
+            <span class="ave-tool-badge-icon">{{ currentTool().icon }}</span>
+            <h3 class="ave-inspector-title">{{ currentTool().name }}</h3>
             <span class="ave-tool-chevron">▼</span>
           </button>
         </div>
 
-        <!-- Composition Metadata Card -->
-        @if (state.activeComposition(); as comp) {
-          <div class="ave-section">
-            <div class="ave-section-title">Composition Details</div>
-            <div class="ave-meta-grid">
-              <div class="ave-meta-item">
-                <span class="ave-meta-label">Dimensions</span>
-                <span class="ave-meta-val">{{ comp.width }} × {{ comp.height }}</span>
-              </div>
-              <div class="ave-meta-item">
-                <span class="ave-meta-label">FPS</span>
-                <span class="ave-meta-val">{{ comp.fps }}</span>
-              </div>
-              <div class="ave-meta-item">
-                <span class="ave-meta-label">Duration</span>
-                <span class="ave-meta-val">{{ comp.durationInFrames }} frames ({{ (comp.durationInFrames / comp.fps).toFixed(1) }}s)</span>
+        @if (state.activeTool() === 'inspector') {
+          <!-- Composition Metadata Card -->
+          @if (state.activeComposition(); as comp) {
+            <div class="ave-section">
+              <div class="ave-section-title">Composition Details</div>
+              <div class="ave-meta-grid">
+                <div class="ave-meta-item">
+                  <span class="ave-meta-label">Dimensions</span>
+                  <span class="ave-meta-val">{{ comp.width }} × {{ comp.height }}</span>
+                </div>
+                <div class="ave-meta-item">
+                  <span class="ave-meta-label">FPS</span>
+                  <span class="ave-meta-val">{{ comp.fps }}</span>
+                </div>
+                <div class="ave-meta-item">
+                  <span class="ave-meta-label">Duration</span>
+                  <span class="ave-meta-val">{{ comp.durationInFrames }} frames ({{ (comp.durationInFrames / comp.fps).toFixed(1) }}s)</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Dynamic Schema Props Inspector -->
-          <div class="ave-section">
-            <div class="ave-section-title">Component Props</div>
-            
-            @if (propKeys().length === 0) {
-              <p class="ave-empty-hint">No defaultProps declared on this composition.</p>
-            } @else {
-              <div class="ave-props-form">
-                @for (key of propKeys(); track key) {
-                  <div class="ave-form-row">
-                    <label class="ave-label">{{ key }}</label>
-                    
-                    @switch (getPropType(key)) {
-                      @case ('color') {
-                        <div class="ave-color-input-wrapper">
+            <!-- Dynamic Schema Props Inspector -->
+            <div class="ave-section">
+              <div class="ave-section-title">Component Props</div>
+              
+              @if (propKeys().length === 0) {
+                <p class="ave-empty-hint">No defaultProps declared on this composition.</p>
+              } @else {
+                <div class="ave-props-form">
+                  @for (key of propKeys(); track key) {
+                    <div class="ave-form-row">
+                      <label class="ave-label">{{ key }}</label>
+                      
+                      @switch (getPropType(key)) {
+                        @case ('color') {
+                          <div class="ave-color-input-wrapper">
+                            <input
+                              type="color"
+                              class="ave-color-picker"
+                              [value]="asString(state.activeProps()[key])"
+                              (input)="onPropInput(key, $event)"
+                            />
+                            <span class="ave-color-text">{{ state.activeProps()[key] }}</span>
+                          </div>
+                        }
+                        @case ('boolean') {
                           <input
-                            type="color"
-                            class="ave-color-picker"
-                            [value]="asString(state.activeProps()[key])"
+                            type="checkbox"
+                            class="ave-checkbox"
+                            [checked]="!!state.activeProps()[key]"
+                            (change)="onCheckboxChange(key, $event)"
+                          />
+                        }
+                        @case ('number') {
+                          <input
+                            type="number"
+                            class="ave-text-input ave-number-input"
+                            [value]="state.activeProps()[key]"
+                            (input)="onNumberInput(key, $event)"
+                          />
+                        }
+                        @default {
+                          <input
+                            type="text"
+                            class="ave-text-input"
+                            [value]="state.activeProps()[key]"
                             (input)="onPropInput(key, $event)"
                           />
-                          <span class="ave-color-text">{{ state.activeProps()[key] }}</span>
-                        </div>
+                        }
                       }
-                      @case ('boolean') {
-                        <input
-                          type="checkbox"
-                          class="ave-checkbox"
-                          [checked]="!!state.activeProps()[key]"
-                          (change)="onCheckboxChange(key, $event)"
-                        />
-                      }
-                      @case ('number') {
-                        <input
-                          type="number"
-                          class="ave-text-input ave-number-input"
-                          [value]="state.activeProps()[key]"
-                          (input)="onNumberInput(key, $event)"
-                        />
-                      }
-                      @default {
-                        <input
-                          type="text"
-                          class="ave-text-input"
-                          [value]="state.activeProps()[key]"
-                          (input)="onPropInput(key, $event)"
-                        />
-                      }
-                    }
-                  </div>
-                }
-              </div>
-            }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        } @else {
+          <!-- Tool Placeholder Card for tools to be implemented (e.g. AI) -->
+          <div class="ave-tool-placeholder-card">
+            <div class="ave-tool-placeholder-icon">{{ currentTool().icon }}</div>
+            <h4 class="ave-tool-placeholder-title">{{ currentTool().name }}</h4>
+            <p class="ave-tool-placeholder-desc">{{ currentTool().description }}</p>
+            <div class="ave-tool-placeholder-status">
+              <span class="ave-tag ave-tag-planned">Tool Ready Soon</span>
+              <button class="ave-btn-subtle ave-tool-back-btn" (click)="state.selectTool('inspector')">
+                Back to Inspector
+              </button>
+            </div>
           </div>
         }
       }
@@ -509,6 +523,52 @@ export interface StudioToolItem {
       }
     }
 
+    /* Tool Placeholder Card */
+    .ave-tool-placeholder-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 36px 16px;
+      background: #181926;
+      border: 1px solid #23263a;
+      border-radius: 8px;
+      gap: 12px;
+    }
+
+    .ave-tool-placeholder-icon {
+      font-size: 38px;
+      line-height: 1;
+    }
+
+    .ave-tool-placeholder-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin: 0;
+    }
+
+    .ave-tool-placeholder-desc {
+      font-size: 12px;
+      color: #94a3b8;
+      max-width: 260px;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .ave-tool-placeholder-status {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .ave-tool-back-btn {
+      margin-top: 4px;
+      padding: 6px 14px;
+    }
+
     /* Inspector Sections */
     .ave-section {
       background: #181926;
@@ -623,7 +683,16 @@ export class AveInspectorComponent {
 
   readonly searchQuery = signal<string>('');
 
-  readonly tools: StudioToolItem[] = [
+  // Raw list of registered studio tools (can be added in any order)
+  readonly rawTools: StudioToolItem[] = [
+    {
+      id: 'ai',
+      name: 'AI',
+      icon: '🤖',
+      description: 'Connect with AI to code components and do native AI video creation',
+      category: 'AI',
+      ready: false
+    },
     {
       id: 'inspector',
       name: 'Properties & Inspector',
@@ -690,15 +759,34 @@ export class AveInspectorComponent {
     }
   ];
 
-  readonly filteredTools = computed(() => {
+  // Guaranteed unique via Set and automatically ordered alphabetically by tool name
+  readonly tools: StudioToolItem[] = Array.from(new Set(this.rawTools)).sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+  );
+
+  // Filtered tools with Set applied on the resulting array and sorted alphabetically
+  readonly filteredTools = computed<StudioToolItem[]>(() => {
     const q = this.searchQuery().toLowerCase().trim();
-    if (!q) return this.tools;
-    return this.tools.filter(t =>
+    if (!q) {
+      return Array.from(new Set(this.tools)).sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+      );
+    }
+    const matches = this.tools.filter(t =>
       t.id.toLowerCase().includes(q) ||
       t.name.toLowerCase().includes(q) ||
       t.description.toLowerCase().includes(q) ||
       t.category.toLowerCase().includes(q)
     );
+    return Array.from(new Set(matches)).sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+    );
+  });
+
+  // Currently active tool item metadata
+  readonly currentTool = computed<StudioToolItem>(() => {
+    const id = this.state.activeTool();
+    return this.tools.find(t => t.id === id) ?? this.tools.find(t => t.id === 'inspector') ?? this.tools[0];
   });
 
   readonly propKeys = computed<string[]>(() => {
