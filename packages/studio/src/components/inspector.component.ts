@@ -113,6 +113,27 @@ import { RootFrameService } from '@angular-video/core';
       overflow-y: auto;
       padding: 16px;
       gap: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: #272c44 #12131d;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      &::-webkit-scrollbar-track {
+        background: #12131d;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #272c44;
+        border-radius: 4px;
+
+        &:hover {
+          background-color: #3e466d;
+        }
+
+        &:active {
+          background-color: #06b6d4;
+        }
+      }
     }
 
     .ave-inspector-header {

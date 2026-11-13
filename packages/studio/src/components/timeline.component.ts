@@ -524,20 +524,24 @@ interface DisplayTrack {
       overflow-y: hidden;
       position: relative;
       scrollbar-width: thin;
-      scrollbar-color: #2b304d #0f1019;
+      scrollbar-color: #272c44 #0e1019;
 
       &::-webkit-scrollbar {
         height: 6px;
       }
       &::-webkit-scrollbar-track {
-        background: #0f1019;
+        background: #0e1019;
       }
       &::-webkit-scrollbar-thumb {
-        background: #2b304d;
-        border-radius: 3px;
+        background: #272c44;
+        border-radius: 4px;
 
         &:hover {
-          background: #3b82f6;
+          background-color: #3e466d;
+        }
+
+        &:active {
+          background-color: #06b6d4;
         }
       }
     }

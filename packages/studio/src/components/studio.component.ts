@@ -66,6 +66,40 @@ import { AveStudioHeaderComponent } from './studio-header.component';
       background: #090a10;
       color: #f1f5f9;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+      /* Studio-Wide Unified Scrollbar Theme */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #272c44 #0e1019;
+      }
+
+      *::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      *::-webkit-scrollbar-track {
+        background: #0e1019;
+      }
+
+      *::-webkit-scrollbar-thumb {
+        background: #272c44;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        background-clip: content-box;
+
+        &:hover {
+          background-color: #3e466d;
+        }
+
+        &:active {
+          background-color: #06b6d4;
+        }
+      }
+
+      *::-webkit-scrollbar-corner {
+        background: #0e1019;
+      }
     }
 
     .ave-studio-workbench {

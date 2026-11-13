@@ -16,6 +16,40 @@
         font-family: system-ui, -apple-system, sans-serif;
         overflow: hidden;
       }
+
+      /* Studio-Wide Unified Scrollbar Theme */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #272c44 #0e1019;
+      }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #0e1019;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #272c44;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        background-clip: content-box;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: #3e466d;
+      }
+
+      ::-webkit-scrollbar-thumb:active {
+        background-color: #06b6d4;
+      }
+
+      ::-webkit-scrollbar-corner {
+        background: #0e1019;
+      }
     </style>
   </head>
   <body>

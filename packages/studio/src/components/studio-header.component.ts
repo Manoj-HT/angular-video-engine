@@ -203,12 +203,35 @@ import { PresentationSyncService, AudioDestination } from '../services/presentat
       top: calc(100% + 6px);
       left: 0;
       min-width: 260px;
+      max-height: 380px;
+      overflow-y: auto;
+      overflow-x: hidden;
       background: #161722;
       border: 1px solid #282a3e;
       border-radius: 8px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
       z-index: 50;
-      overflow: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: #272c44 #161722;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      &::-webkit-scrollbar-track {
+        background: #161722;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #272c44;
+        border-radius: 4px;
+
+        &:hover {
+          background-color: #3e466d;
+        }
+
+        &:active {
+          background-color: #06b6d4;
+        }
+      }
     }
 
     .ave-dropdown-header {
