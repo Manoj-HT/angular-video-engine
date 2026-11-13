@@ -29,14 +29,18 @@ function aveWebSocketPlugin(): Plugin {
           req.on('end', () => {
             try {
               const data = JSON.parse(body);
-              const { id, width, height, fps, durationInFrames } = data;
+              const { id, newId, title, renderName, width, height, fps, durationInFrames } = data;
               if (!id) {
                 res.statusCode = 400;
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ success: false, error: 'Missing composition id' }));
                 return;
               }
-              const result = updateCompositionInFile(id, { width, height, fps, durationInFrames }, import.meta.dirname);
+              const result = updateCompositionInFile(
+                id,
+                { id: newId, title, renderName, width, height, fps, durationInFrames },
+                import.meta.dirname
+              );
               res.statusCode = result.success ? 200 : 404;
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify(result));

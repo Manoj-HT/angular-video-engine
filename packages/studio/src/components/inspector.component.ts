@@ -134,6 +134,77 @@ export interface StudioToolItem {
                 }
               </div>
 
+              <!-- Video ID (Unique Identifier) -->
+              <div class="ave-comp-prop-field">
+                <div class="ave-comp-prop-label-row">
+                  <span class="ave-prop-label">Video ID</span>
+                  <span class="ave-id-tag">Unique Key</span>
+                </div>
+                <div class="ave-input-with-affix">
+                  <span class="ave-input-prefix">#</span>
+                  <input
+                    type="text"
+                    class="ave-affix-input ave-mono-input"
+                    [value]="comp.id"
+                    (input)="onIdChange($event)"
+                    title="Unique video composition identifier"
+                    placeholder="e.g. KineticShowcase"
+                  />
+                  <button
+                    type="button"
+                    class="ave-copy-id-btn"
+                    (click)="copyToClipboard(comp.id)"
+                    title="Copy Video ID"
+                  >
+                    📋
+                  </button>
+                </div>
+                <span class="ave-field-hint">Unique identifier used for rendering, routing, and CLI</span>
+              </div>
+
+              <!-- Title (Composition Name) -->
+              <div class="ave-comp-prop-field">
+                <div class="ave-comp-prop-label-row">
+                  <span class="ave-prop-label">Title</span>
+                  <span class="ave-field-sub">Composition Name</span>
+                </div>
+                <input
+                  type="text"
+                  class="ave-text-prop-input"
+                  [value]="comp.title || comp.id"
+                  (input)="onTitleChange($event)"
+                  title="Composition display name"
+                  placeholder="e.g. Kinetic Motion Showcase"
+                />
+              </div>
+
+              <!-- Render Name (Output Filename / Render Target) -->
+              <div class="ave-comp-prop-field">
+                <div class="ave-comp-prop-label-row">
+                  <span class="ave-prop-label">Render Name</span>
+                  <button
+                    type="button"
+                    class="ave-sync-title-btn"
+                    (click)="syncRenderNameWithTitle()"
+                    title="Reset render name to match Title"
+                  >
+                    ↺ Match Title
+                  </button>
+                </div>
+                <div class="ave-input-with-affix">
+                  <input
+                    type="text"
+                    class="ave-affix-input ave-mono-input"
+                    [value]="comp.renderName || comp.title || comp.id"
+                    (input)="onRenderNameChange($event)"
+                    title="Target render and export output name"
+                    placeholder="e.g. kinetic_showcase_final"
+                  />
+                  <span class="ave-input-suffix">.mp4</span>
+                </div>
+                <span class="ave-field-hint">Output file name used when rendering & exporting</span>
+              </div>
+
               <!-- Dimensions (Width & Height) -->
               <div class="ave-comp-prop-field">
                 <div class="ave-comp-prop-label-row">
@@ -238,61 +309,6 @@ export interface StudioToolItem {
                   </select>
                 </div>
               </div>
-            </div>
-
-            <!-- Dynamic Schema Props Inspector -->
-            <div class="ave-section">
-              <div class="ave-section-title">Component Props</div>
-              
-              @if (propKeys().length === 0) {
-                <p class="ave-empty-hint">No defaultProps declared on this composition.</p>
-              } @else {
-                <div class="ave-props-form">
-                  @for (key of propKeys(); track key) {
-                    <div class="ave-form-row">
-                      <label class="ave-label">{{ key }}</label>
-                      
-                      @switch (getPropType(key)) {
-                        @case ('color') {
-                          <div class="ave-color-input-wrapper">
-                            <input
-                              type="color"
-                              class="ave-color-picker"
-                              [value]="asString(state.activeProps()[key])"
-                              (input)="onPropInput(key, $event)"
-                            />
-                            <span class="ave-color-text">{{ state.activeProps()[key] }}</span>
-                          </div>
-                        }
-                        @case ('boolean') {
-                          <input
-                            type="checkbox"
-                            class="ave-checkbox"
-                            [checked]="!!state.activeProps()[key]"
-                            (change)="onCheckboxChange(key, $event)"
-                          />
-                        }
-                        @case ('number') {
-                          <input
-                            type="number"
-                            class="ave-text-input ave-number-input"
-                            [value]="state.activeProps()[key]"
-                            (input)="onNumberInput(key, $event)"
-                          />
-                        }
-                        @default {
-                          <input
-                            type="text"
-                            class="ave-text-input"
-                            [value]="state.activeProps()[key]"
-                            (input)="onPropInput(key, $event)"
-                          />
-                        }
-                      }
-                    </div>
-                  }
-                </div>
-              }
             </div>
           }
         } @else {
@@ -815,7 +831,7 @@ export interface StudioToolItem {
       user-select: none;
     }
 
-    .ave-dim-input, .ave-fps-input, .ave-duration-input {
+    .ave-dim-input, .ave-affix-input, .ave-fps-input, .ave-duration-input {
       flex: 1;
       width: 100%;
       background: transparent;
@@ -923,6 +939,82 @@ export interface StudioToolItem {
         &:focus {
           border-color: #38bdf8;
         }
+      }
+    }
+
+    .ave-text-prop-input {
+      width: 100%;
+      background: #10111a;
+      border: 1px solid #282a3e;
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: #f1f5f9;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.15s ease;
+
+      &:focus {
+        border-color: #38bdf8;
+      }
+    }
+
+    .ave-mono-input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+      font-size: 11px !important;
+    }
+
+    .ave-id-tag {
+      font-size: 9px;
+      font-weight: 700;
+      color: #a78bfa;
+      background: rgba(167, 139, 250, 0.12);
+      border: 1px solid rgba(167, 139, 250, 0.3);
+      padding: 1px 5px;
+      border-radius: 4px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .ave-field-sub {
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    .ave-field-hint {
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.3;
+      margin-top: 2px;
+    }
+
+    .ave-sync-title-btn {
+      background: transparent;
+      border: none;
+      color: #38bdf8;
+      font-size: 10px;
+      cursor: pointer;
+      padding: 1px 4px;
+      border-radius: 3px;
+      transition: opacity 0.15s ease;
+
+      &:hover {
+        opacity: 0.8;
+        text-decoration: underline;
+      }
+    }
+
+    .ave-copy-id-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      opacity: 0.6;
+      transition: opacity 0.15s ease;
+
+      &:hover {
+        opacity: 1;
       }
     }
 
@@ -1167,6 +1259,45 @@ export class AveInspectorComponent {
   selectTool(toolId: string): void {
     this.state.selectTool(toolId);
     this.searchQuery.set('');
+  }
+
+  onIdChange(event: Event): void {
+    const raw = (event.target as HTMLInputElement).value.trim();
+    const cleanId = raw.replace(/[^a-zA-Z0-9_-]/g, '');
+    if (cleanId) {
+      this.state.updateCompositionDetails({ id: cleanId });
+    }
+  }
+
+  onTitleChange(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    const comp = this.state.activeComposition();
+    const currentRender = comp?.renderName;
+    const currentTitle = comp?.title;
+
+    // If renderName is empty or equals previous title, sync renderName with title
+    const shouldSyncRender = !currentRender || currentRender === currentTitle;
+
+    this.state.updateCompositionDetails({
+      title: val,
+      ...(shouldSyncRender ? { renderName: val } : {})
+    });
+  }
+
+  onRenderNameChange(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.state.updateCompositionDetails({ renderName: val });
+  }
+
+  syncRenderNameWithTitle(): void {
+    const comp = this.state.activeComposition();
+    if (!comp) return;
+    const title = comp.title || comp.id;
+    this.state.updateCompositionDetails({ renderName: title });
+  }
+
+  copyToClipboard(text: string): void {
+    navigator.clipboard?.writeText(text);
   }
 
   onDimensionChange(dimension: 'width' | 'height', event: Event): void {

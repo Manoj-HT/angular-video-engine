@@ -6,6 +6,7 @@ export const videoCompositions: VideoMetadata[] = defineCompositions([
   {
     id: 'KineticShowcase',
     title: 'Kinetic Motion Showcase (20s)',
+    renderName: 'Kinetic Motion Showcase (20s)',
     component: KineticShowcaseComponent,
     durationInFrames: 600, // 20.0s at 30 fps
     fps: 30,

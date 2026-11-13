@@ -3,7 +3,15 @@ import path from 'path';
 
 export function updateCompositionInFile(
   id: string,
-  updates: { width?: number; height?: number; fps?: number; durationInFrames?: number },
+  updates: {
+    id?: string;
+    title?: string;
+    renderName?: string;
+    width?: number;
+    height?: number;
+    fps?: number;
+    durationInFrames?: number;
+  },
   rootDir: string = process.cwd()
 ): { success: boolean; filePath?: string; error?: string } {
   const primaryPath = path.resolve(rootDir, 'src/videos/index.ts');
@@ -55,6 +63,38 @@ export function updateCompositionInFile(
     }
 
     let block = content.slice(startIndex, endIndex);
+
+    // Update title if provided
+    if (typeof updates.title === 'string' && updates.title.trim()) {
+      const cleanTitle = updates.title.replace(/'/g, "\\'");
+      if (/\btitle:\s*['"`]/.test(block)) {
+        block = block.replace(/(\btitle:\s*)['"`][^'"`]*['"`]/, `$1'${cleanTitle}'`);
+      } else {
+        block = block.replace(/(\bid:\s*['"`][^'"`]*['"`],?)/, `$1\n    title: '${cleanTitle}',`);
+      }
+    }
+
+    // Update renderName if provided
+    if (typeof updates.renderName === 'string') {
+      const cleanRender = updates.renderName.trim().replace(/'/g, "\\'");
+      if (/\brenderName:\s*['"`]/.test(block)) {
+        block = block.replace(/(\brenderName:\s*)['"`][^'"`]*['"`]/, `$1'${cleanRender}'`);
+      } else if (cleanRender) {
+        if (/\btitle:\s*['"`]/.test(block)) {
+          block = block.replace(/(\btitle:\s*['"`][^'"`]*['"`],?)/, `$1\n    renderName: '${cleanRender}',`);
+        } else {
+          block = block.replace(/(\bid:\s*['"`][^'"`]*['"`],?)/, `$1\n    renderName: '${cleanRender}',`);
+        }
+      }
+    }
+
+    // Update id if provided and different
+    if (typeof updates.id === 'string' && updates.id.trim() && updates.id.trim() !== id) {
+      const cleanId = updates.id.trim().replace(/[^a-zA-Z0-9_-]/g, '');
+      if (cleanId) {
+        block = block.replace(/(\bid:\s*)['"`][^'"`]*['"`]/, `$1'${cleanId}'`);
+      }
+    }
 
     // Update width if provided
     if (typeof updates.width === 'number' && Number.isFinite(updates.width)) {

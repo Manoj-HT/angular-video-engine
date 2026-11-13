@@ -32,7 +32,15 @@ export class StudioStateService {
   readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
   private saveDebounceTimer: any = null;
   private saveFeedbackTimer: any = null;
-  private pendingCompositionUpdates: { width?: number; height?: number; fps?: number; durationInFrames?: number } = {};
+  private pendingCompositionUpdates: {
+    id?: string;
+    title?: string;
+    renderName?: string;
+    width?: number;
+    height?: number;
+    fps?: number;
+    durationInFrames?: number;
+  } = {};
 
   // Workbench UI state
   readonly zoomMode = signal<ZoomMode>('fit');
@@ -178,21 +186,35 @@ export class StudioStateService {
     }));
   }
 
-  updateCompositionDetails(updates: { width?: number; height?: number; fps?: number; durationInFrames?: number }): void {
+  updateCompositionDetails(updates: {
+    id?: string;
+    title?: string;
+    renderName?: string;
+    width?: number;
+    height?: number;
+    fps?: number;
+    durationInFrames?: number;
+  }): void {
     const active = this.activeComposition();
     if (!active) return;
-    const compId = active.id;
+    const currentCompId = active.id;
+    const nextCompId = updates.id && updates.id.trim() ? updates.id.trim() : currentCompId;
 
     // 1. Immediately update in-memory composition signal
     this.compositions.update(list => list.map(c => {
-      if (c.id === compId) {
+      if (c.id === currentCompId) {
         return {
           ...c,
-          ...updates
+          ...updates,
+          id: nextCompId
         };
       }
       return c;
     }));
+
+    if (nextCompId !== currentCompId) {
+      this.activeCompositionId.set(nextCompId);
+    }
 
     // Accumulate pending updates across rapid user inputs
     this.pendingCompositionUpdates = {
@@ -225,19 +247,31 @@ export class StudioStateService {
     this.saveDebounceTimer = setTimeout(() => {
       const toSend = { ...this.pendingCompositionUpdates };
       this.pendingCompositionUpdates = {};
-      this.persistCompositionToCode(compId, toSend);
+      this.persistCompositionToCode(currentCompId, toSend);
     }, 400);
   }
 
   private async persistCompositionToCode(
     id: string,
-    updates: { width?: number; height?: number; fps?: number; durationInFrames?: number }
+    updates: {
+      id?: string;
+      title?: string;
+      renderName?: string;
+      width?: number;
+      height?: number;
+      fps?: number;
+      durationInFrames?: number;
+    }
   ): Promise<void> {
     try {
+      const payload: Record<string, unknown> = { id, ...updates };
+      if (updates.id && updates.id !== id) {
+        payload['newId'] = updates.id;
+      }
       const res = await fetch('/api/composition', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...updates })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (data.success) {

@@ -10,6 +10,7 @@ export interface VideoConfig {
 export interface VideoMetadata<TProps = any> {
   id: string;
   title?: string;
+  renderName?: string;
   component: Type<unknown>;
   durationInFrames: number;
   fps: number;
