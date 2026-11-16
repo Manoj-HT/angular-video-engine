@@ -155,6 +155,49 @@ export function resolveComponentFiles(
 }
 
 /**
+ * Generates all possible CSS candidate selectors for an element to find existing rules.
+ */
+export function getCandidateSelectors(target: ElementTargetIdentifier): string[] {
+  const list: string[] = [];
+  if (target.selector && target.selector.trim()) {
+    list.push(target.selector.trim());
+  }
+  if (target.aveName) {
+    list.push(`[ave-name="${target.aveName}"]`);
+    list.push(`[ave-name='${target.aveName}']`);
+  }
+  if (target.dataName) {
+    list.push(`[data-name="${target.dataName}"]`);
+    list.push(`[data-name='${target.dataName}']`);
+  }
+  if (target.elementId) {
+    list.push(`#${target.elementId}`);
+  }
+  if (target.className) {
+    const classes = target.className.split(/\s+/).filter(c => c && !c.startsWith('ng-') && !c.startsWith('_ng'));
+    for (const c of classes) {
+      const dotCls = `.${c}`;
+      if (!list.includes(dotCls)) list.push(dotCls);
+    }
+  }
+  if (target.tagName && !['div', 'span', 'p'].includes(target.tagName.toLowerCase())) {
+    list.push(target.tagName.toLowerCase());
+  }
+  return list;
+}
+
+export function findCssRuleForCandidates(
+  css: string,
+  candidates: string[]
+): { selector: string; body: string; fullMatch: string; bodyStart: number; bodyEnd: number } | null {
+  for (const cand of candidates) {
+    const match = findCssRuleBlock(css, cand);
+    if (match) return match;
+  }
+  return null;
+}
+
+/**
  * Writes or updates a static CSS property in the composition's CSS file or inline styles.
  */
 export function writeCssProperty(
@@ -162,6 +205,7 @@ export function writeCssProperty(
   selector: string,
   property: string,
   value: string,
+  candidates?: string[],
   rootDir: string = process.cwd()
 ): { success: boolean; error?: string; selector?: string; property?: string; value?: string } {
   const sources = resolveComponentFiles(compositionId, rootDir);
@@ -173,8 +217,8 @@ export function writeCssProperty(
   const cleanVal = value.trim();
   const cleanSelector = selector.trim();
 
-  if (!cleanProp || !cleanVal || !cleanSelector) {
-    return { success: false, error: 'Selector, property, and value are required.' };
+  if (!cleanProp || !cleanSelector) {
+    return { success: false, error: 'Selector and property are required.' };
   }
 
   const filePath = sources.cssPath;
@@ -183,16 +227,17 @@ export function writeCssProperty(
   }
 
   let content = fs.readFileSync(filePath, 'utf-8');
+  const allCandidates = candidates && candidates.length > 0 ? candidates : [cleanSelector];
 
   if (sources.isMultiFile) {
     // Multi-file: write into .css file
-    content = upsertCssRule(content, cleanSelector, cleanProp, cleanVal);
+    content = upsertCssRuleWithCandidates(content, allCandidates, cleanSelector, cleanProp, cleanVal);
   } else {
     // Single-file: write into styles: [`...`] in .ts file
     const stylesRegex = /styles:\s*\[\s*`([\s\S]*?)`\s*\]/;
     const stylesMatch = stylesRegex.exec(content);
     if (stylesMatch) {
-      const updatedStyles = upsertCssRule(stylesMatch[1], cleanSelector, cleanProp, cleanVal);
+      const updatedStyles = upsertCssRuleWithCandidates(stylesMatch[1], allCandidates, cleanSelector, cleanProp, cleanVal);
       content = content.replace(stylesRegex, `styles: [\`\n${updatedStyles.trim()}\n  \`]`);
     } else {
       // Append styles array if missing
@@ -219,6 +264,7 @@ export function removeCssProperty(
   compositionId: string,
   selector: string,
   property: string,
+  candidates?: string[],
   rootDir: string = process.cwd()
 ): { success: boolean; error?: string } {
   const sources = resolveComponentFiles(compositionId, rootDir);
@@ -230,14 +276,15 @@ export function removeCssProperty(
   let content = fs.readFileSync(filePath, 'utf-8');
   const cleanProp = property.trim();
   const cleanSelector = selector.trim();
+  const allCandidates = candidates && candidates.length > 0 ? candidates : [cleanSelector];
 
   if (sources.isMultiFile) {
-    content = deleteCssProperty(content, cleanSelector, cleanProp);
+    content = deleteCssPropertyWithCandidates(content, allCandidates, cleanProp);
   } else {
     const stylesRegex = /styles:\s*\[\s*`([\s\S]*?)`\s*\]/;
     const stylesMatch = stylesRegex.exec(content);
     if (stylesMatch) {
-      const updatedStyles = deleteCssProperty(stylesMatch[1], cleanSelector, cleanProp);
+      const updatedStyles = deleteCssPropertyWithCandidates(stylesMatch[1], allCandidates, cleanProp);
       content = content.replace(stylesRegex, `styles: [\`\n${updatedStyles.trim()}\n  \`]`);
     }
   }
@@ -261,8 +308,9 @@ export function writeAveAnimateDirective(
   if (!sources) return { success: false, error: 'Composition source not found' };
 
   // 1. If requested, remove the static CSS property first
-  if (removeCssProp && target.selector) {
-    removeCssProperty(compositionId, target.selector, removeCssProp, rootDir);
+  if (removeCssProp) {
+    const candidates = getCandidateSelectors(target);
+    removeCssProperty(compositionId, target.selector || '', removeCssProp, candidates, rootDir);
   }
 
   const htmlPath = sources.htmlPath;
@@ -348,6 +396,7 @@ export function inspectElementStylesAndAnimation(
   hasAnimate: boolean;
   animateConfig?: any;
   cssRules: Record<string, string>;
+  matchedSelector?: string;
   error?: string;
 } {
   const sources = resolveComponentFiles(compositionId, rootDir);
@@ -369,10 +418,13 @@ export function inspectElementStylesAndAnimation(
   }
 
   const cssRules: Record<string, string> = {};
-  if (fs.existsSync(sources.cssPath) && target.selector) {
+  let matchedSelector = target.selector || '';
+  if (fs.existsSync(sources.cssPath)) {
     const css = fs.readFileSync(sources.cssPath, 'utf-8');
-    const ruleMatch = findCssRuleBlock(css, target.selector);
+    const candidates = getCandidateSelectors(target);
+    const ruleMatch = findCssRuleForCandidates(css, candidates);
     if (ruleMatch) {
+      matchedSelector = ruleMatch.selector;
       const propRegex = /([a-zA-Z0-9_-]+)\s*:\s*([^;]+);?/g;
       let m: RegExpExecArray | null;
       while ((m = propRegex.exec(ruleMatch.body)) !== null) {
@@ -385,14 +437,21 @@ export function inspectElementStylesAndAnimation(
     success: true,
     hasAnimate,
     animateConfig,
-    cssRules
+    cssRules,
+    matchedSelector
   };
 }
 
 // ================= INTERNAL HELPER UTILITIES =================
 
-function upsertCssRule(css: string, selector: string, prop: string, val: string): string {
-  const rule = findCssRuleBlock(css, selector);
+function upsertCssRuleWithCandidates(
+  css: string,
+  candidates: string[],
+  fallbackSelector: string,
+  prop: string,
+  val: string
+): string {
+  const rule = findCssRuleForCandidates(css, candidates);
   if (rule) {
     let body = rule.body;
     const propRegex = new RegExp(`(\\b${escapeRegex(prop)}\\s*:\\s*)([^;]+)(;?)`, 'i');
@@ -406,11 +465,11 @@ function upsertCssRule(css: string, selector: string, prop: string, val: string)
 
   // Not found: append new rule
   const cleanCss = css.trimEnd();
-  return `${cleanCss}\n\n${selector} {\n  ${prop}: ${val};\n}\n`;
+  return `${cleanCss}\n\n${fallbackSelector} {\n  ${prop}: ${val};\n}\n`;
 }
 
-function deleteCssProperty(css: string, selector: string, prop: string): string {
-  const rule = findCssRuleBlock(css, selector);
+function deleteCssPropertyWithCandidates(css: string, candidates: string[], prop: string): string {
+  const rule = findCssRuleForCandidates(css, candidates);
   if (!rule) return css;
 
   const propRegex = new RegExp(`\\s*\\b${escapeRegex(prop)}\\s*:\\s*[^;]+;?\\r?\\n?`, 'gi');
@@ -422,17 +481,20 @@ function findCssRuleBlock(
   css: string,
   selector: string
 ): { selector: string; body: string; fullMatch: string; bodyStart: number; bodyEnd: number } | null {
-  // Pattern to find selector { ... }
-  const regex = new RegExp(`(^|\\n|})\\s*([^{}]*?${escapeRegex(selector)}[^{}]*?)\\{([^{}]*)\\}`, 'g');
+  const escaped = escapeRegex(selector.trim());
+  const regex = new RegExp(`(^|\\n|})([^{}]*?(?:^|[\\s,}])` + escaped + `(?:[\\s,{:]|$)[^{}]*?)\\{([^{}]*)\\}`, 'g');
   let match: RegExpExecArray | null;
   while ((match = regex.exec(css)) !== null) {
     const body = match[3];
-    const bodyStart = match.index + match[0].indexOf('{') + 1;
-    const bodyEnd = match.index + match[0].lastIndexOf('}');
+    const fullMatch = match[0];
+    const openBrace = fullMatch.indexOf('{');
+    const closeBrace = fullMatch.lastIndexOf('}');
+    const bodyStart = match.index + openBrace + 1;
+    const bodyEnd = match.index + closeBrace;
     return {
       selector: match[2].trim(),
       body,
-      fullMatch: match[0],
+      fullMatch,
       bodyStart,
       bodyEnd
     };

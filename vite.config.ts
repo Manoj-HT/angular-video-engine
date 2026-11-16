@@ -229,8 +229,8 @@ function aveWebSocketPlugin(): Plugin {
           req.on('data', chunk => { body += chunk; });
           req.on('end', () => {
             try {
-              const { compositionId, selector, property, value } = JSON.parse(body);
-              const result = writeCssProperty(compositionId, selector, property, value);
+              const { compositionId, selector, property, value, candidates } = JSON.parse(body);
+              const result = writeCssProperty(compositionId, selector, property, value, candidates);
               res.statusCode = result.success ? 200 : 400;
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify(result));
@@ -249,8 +249,8 @@ function aveWebSocketPlugin(): Plugin {
           req.on('data', chunk => { body += chunk; });
           req.on('end', () => {
             try {
-              const { compositionId, selector, property } = JSON.parse(body);
-              const result = removeCssProperty(compositionId, selector, property);
+              const { compositionId, selector, property, candidates } = JSON.parse(body);
+              const result = removeCssProperty(compositionId, selector, property, candidates);
               res.statusCode = result.success ? 200 : 400;
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify(result));

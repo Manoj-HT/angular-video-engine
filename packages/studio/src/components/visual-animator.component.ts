@@ -422,18 +422,40 @@ export const COMMON_CSS_PROPERTIES: string[] = [
               </div>
             }
 
-            <!-- Existing Static CSS Properties on Element -->
+            <!-- Existing Static CSS Properties on Element (Editable) -->
             <div class="ave-card-block">
               <div class="ave-card-block-header">
                 <span class="ave-card-icon">🎨</span>
                 <h4>Declared CSS Properties</h4>
+                @if (activeMatchedSelector()) {
+                  <span class="ave-matched-selector-badge" [title]="'Selector: ' + activeMatchedSelector()">
+                    {{ activeMatchedSelector() }}
+                  </span>
+                }
               </div>
 
               <div class="ave-css-props-list">
                 @for (entry of getCssRulesList(); track entry.prop) {
                   <div class="ave-css-prop-row">
-                    <span class="ave-css-k">{{ entry.prop }}:</span>
-                    <span class="ave-css-v">{{ entry.val }}</span>
+                    <span class="ave-css-k" [title]="'CSS Property: ' + entry.prop">{{ entry.prop }}:</span>
+
+                    @if (isColorValue(entry.val)) {
+                      <span
+                        class="ave-color-swatch"
+                        [style.background]="entry.val"
+                        [title]="'Color: ' + entry.val"
+                      ></span>
+                    }
+
+                    <input
+                      type="text"
+                      class="ave-css-val-input"
+                      [value]="entry.val"
+                      (change)="updateCssProperty(entry.prop, $any($event.target).value)"
+                      (keydown.enter)="$any($event.target).blur()"
+                      title="Edit CSS property value and press Enter to save directly to code file"
+                    />
+
                     <button
                       type="button"
                       class="ave-prop-del-btn"
@@ -450,6 +472,34 @@ export const COMMON_CSS_PROPERTIES: string[] = [
                     <span>No specific CSS rules declared for this selector yet</span>
                   </div>
                 }
+
+                <!-- Inline Add Property Row -->
+                <div class="ave-inline-add-row">
+                  <input
+                    type="text"
+                    class="ave-inline-add-k"
+                    placeholder="property..."
+                    [(ngModel)]="newCssPropKey"
+                    (keydown.enter)="submitNewInlineCss()"
+                  />
+                  <span class="ave-inline-colon">:</span>
+                  <input
+                    type="text"
+                    class="ave-inline-add-v"
+                    placeholder="value..."
+                    [(ngModel)]="newCssPropVal"
+                    (keydown.enter)="submitNewInlineCss()"
+                  />
+                  <button
+                    type="button"
+                    class="ave-btn-inline-add"
+                    (click)="submitNewInlineCss()"
+                    [disabled]="!newCssPropKey.trim() || !newCssPropVal.trim()"
+                    title="Add property directly to CSS file"
+                  >
+                    + Add
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1233,6 +1283,118 @@ export const COMMON_CSS_PROPERTIES: string[] = [
       color: #facc15;
     }
 
+    .ave-matched-selector-badge {
+      font-size: 9px;
+      font-family: monospace;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: auto;
+      max-width: 140px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ave-color-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      flex-shrink: 0;
+      margin: 0 2px;
+    }
+
+    .ave-css-val-input {
+      flex: 1;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      color: #38bdf8;
+      font-size: 10px;
+      font-family: monospace;
+      padding: 1px 4px;
+      outline: none;
+      min-width: 0;
+
+      &:hover {
+        background: #111422;
+        border-color: #272d47;
+      }
+
+      &:focus {
+        background: #0d0f1a;
+        border-color: #00d2ff;
+        color: #ffffff;
+      }
+    }
+
+    .ave-inline-add-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding-top: 6px;
+      margin-top: 4px;
+      border-top: 1px solid #1f253d;
+    }
+
+    .ave-inline-add-k {
+      flex: 1;
+      background: #0f121d;
+      border: 1px solid #2b3353;
+      border-radius: 3px;
+      color: #94a3b8;
+      font-size: 10px;
+      font-family: monospace;
+      padding: 2px 4px;
+      outline: none;
+
+      &:focus { border-color: #00d2ff; color: #ffffff; }
+    }
+
+    .ave-inline-colon {
+      color: #64748b;
+      font-size: 10px;
+    }
+
+    .ave-inline-add-v {
+      flex: 1;
+      background: #0f121d;
+      border: 1px solid #2b3353;
+      border-radius: 3px;
+      color: #38bdf8;
+      font-size: 10px;
+      font-family: monospace;
+      padding: 2px 4px;
+      outline: none;
+
+      &:focus { border-color: #00d2ff; color: #ffffff; }
+    }
+
+    .ave-btn-inline-add {
+      background: #1e2439;
+      border: 1px solid #2e3656;
+      color: #38bdf8;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 3px;
+      cursor: pointer;
+
+      &:hover:not(:disabled) {
+        background: #0284c7;
+        color: #ffffff;
+        border-color: #0284c7;
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
+
     .ave-css-v {
       color: #38bdf8;
     }
@@ -1325,6 +1487,11 @@ export class AveVisualAnimatorComponent implements OnInit, OnDestroy {
   // Existing properties on selected element
   readonly existingAnimateConfig = signal<any>(null);
   readonly existingCssRules = signal<Record<string, string>>({});
+  readonly activeMatchedSelector = signal<string>('');
+
+  // Inline property addition state
+  newCssPropKey = '';
+  newCssPropVal = '';
 
   // Keyframe memory: tracks the initial frame and initial value when user began staging this property
   private initialKeyframeState = new Map<string, { frame: number; value: string }>();
@@ -1512,6 +1679,7 @@ export class AveVisualAnimatorComponent implements OnInit, OnDestroy {
       const res = await fetch(`/api/styler/inspect?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
+        this.activeMatchedSelector.set(data.matchedSelector || node.selector || '');
         this.existingAnimateConfig.set(data.animateConfig || null);
         this.existingCssRules.set(data.cssRules || {});
       }
@@ -1647,9 +1815,10 @@ export class AveVisualAnimatorComponent implements OnInit, OnDestroy {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             compositionId: compId,
-            selector: node.selector,
+            selector: this.activeMatchedSelector() || node.selector,
             property: prop,
-            value: val
+            value: val,
+            candidates: this.getNodeCandidateSelectors(node)
           })
         });
 
@@ -1684,8 +1853,9 @@ export class AveVisualAnimatorComponent implements OnInit, OnDestroy {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           compositionId: compId,
-          selector: node.selector,
-          property: prop
+          selector: this.activeMatchedSelector() || node.selector,
+          property: prop,
+          candidates: this.getNodeCandidateSelectors(node)
         })
       });
       if (res.ok) {
@@ -1698,6 +1868,94 @@ export class AveVisualAnimatorComponent implements OnInit, OnDestroy {
     } catch (err) {
       console.error(err);
     }
+  }
+
+  // Update or edit an existing CSS property in the code files
+  async updateCssProperty(prop: string, newVal: string): Promise<void> {
+    const node = this.selectedNode();
+    const compId = this.state.activeComposition()?.id || 'DirectivesShowcase';
+    if (!node || !prop) return;
+
+    const cleanVal = newVal.trim().replace(/;$/, '');
+    if (!cleanVal) {
+      await this.removeCssProperty(prop);
+      return;
+    }
+
+    const selector = this.activeMatchedSelector() || node.selector;
+    const candidates = this.getNodeCandidateSelectors(node);
+
+    try {
+      const res = await fetch('/api/styler/css', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          compositionId: compId,
+          selector,
+          property: prop,
+          value: cleanVal,
+          candidates
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        this.showStatus(`✓ Saved ${prop}: ${cleanVal} to CSS`, 'success');
+        this.applyLiveStyle(node.elementRef, prop, cleanVal);
+        this.existingCssRules.update(rules => ({
+          ...rules,
+          [prop]: cleanVal
+        }));
+      } else {
+        this.showStatus(data.error || 'Failed to update CSS', 'error');
+      }
+    } catch (err: any) {
+      this.showStatus(err.message || 'Error updating CSS', 'error');
+    }
+  }
+
+  async submitNewInlineCss(): Promise<void> {
+    const k = this.newCssPropKey.trim();
+    const v = this.newCssPropVal.trim();
+    if (!k || !v) return;
+
+    await this.updateCssProperty(k, v);
+    this.newCssPropKey = '';
+    this.newCssPropVal = '';
+    const node = this.selectedNode();
+    if (node) await this.inspectElement(node);
+  }
+
+  isColorValue(val: string): boolean {
+    if (!val) return false;
+    const trimmed = val.trim().toLowerCase();
+    return trimmed.startsWith('#') || trimmed.startsWith('rgb(') || trimmed.startsWith('rgba(') || trimmed.startsWith('hsl(');
+  }
+
+  getNodeCandidateSelectors(node: DomTreeNode): string[] {
+    const list: string[] = [];
+    if (this.activeMatchedSelector()) list.push(this.activeMatchedSelector());
+    if (node.selector) list.push(node.selector);
+    if (node.aveName) {
+      list.push(`[ave-name="${node.aveName}"]`);
+      list.push(`[ave-name='${node.aveName}']`);
+    }
+    if (node.dataName) {
+      list.push(`[data-name="${node.dataName}"]`);
+      list.push(`[data-name='${node.dataName}']`);
+    }
+    if (node.elementId) list.push(`#${node.elementId}`);
+    if (node.className) {
+      const classes = node.className.split(/\s+/).filter(c => c && !c.startsWith('ng-') && !c.startsWith('_ng'));
+      for (const c of classes) {
+        const dotCls = `.${c}`;
+        if (!list.includes(dotCls)) list.push(dotCls);
+      }
+    }
+    if (node.tagName && !['div', 'span', 'p'].includes(node.tagName.toLowerCase())) {
+      list.push(node.tagName.toLowerCase());
+    }
+    return list;
   }
 
   // Remove property from aveAnimate
