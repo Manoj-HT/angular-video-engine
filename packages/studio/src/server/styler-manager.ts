@@ -17,6 +17,7 @@ export interface ElementTargetIdentifier {
   tagName?: string;
   elementId?: string;
   selector?: string;
+  candidates?: string[];
 }
 
 export interface AnimateWriteConfig {
@@ -159,7 +160,14 @@ export function resolveComponentFiles(
  */
 export function getCandidateSelectors(target: ElementTargetIdentifier): string[] {
   const list: string[] = [];
-  if (target.selector && target.selector.trim()) {
+  if (Array.isArray(target.candidates)) {
+    for (const c of target.candidates) {
+      if (c && typeof c === 'string' && !list.includes(c.trim())) {
+        list.push(c.trim());
+      }
+    }
+  }
+  if (target.selector && target.selector.trim() && !list.includes(target.selector.trim())) {
     list.push(target.selector.trim());
   }
   if (target.aveName) {
@@ -363,10 +371,11 @@ export function writeAveAnimateDirective(
     // Fresh directive insertion
     newDirectiveStr = formatAveAnimateDirective(range, fromObj, toObj, config.spring);
 
-    // If aveName provided and tag doesn't have it, optionally inject it
+    // If aveName provided (or derived) and tag doesn't have it, inject it for unique tracking
+    const derivedName = target.aveName || (target.dataName ? target.dataName : (target.className ? target.className.split(/\s+/)[0] : undefined));
     let nameInject = '';
-    if (target.aveName && !/ave-name\s*=/i.test(fullTag)) {
-      nameInject = ` ave-name="${target.aveName}"`;
+    if (derivedName && !/ave-name\s*=/i.test(fullTag)) {
+      nameInject = ` ave-name="${derivedName}"`;
     }
 
     // Insert directive before tag close '>' (or '/>')
@@ -502,43 +511,167 @@ function findCssRuleBlock(
   return null;
 }
 
+function findOpeningTagEnd(html: string, startIndex: number): number {
+  let inSingle = false;
+  let inDouble = false;
+  let inBacktick = false;
+  let inAngularExpr = 0;
+
+  for (let i = startIndex; i < html.length; i++) {
+    const ch = html[i];
+    const prev = i > startIndex ? html[i - 1] : '';
+
+    if (ch === '"' && !inSingle && !inBacktick && prev !== '\\') {
+      inDouble = !inDouble;
+    } else if (ch === "'" && !inDouble && !inBacktick && prev !== '\\') {
+      inSingle = !inSingle;
+    } else if (ch === '`' && !inSingle && !inDouble && prev !== '\\') {
+      inBacktick = !inBacktick;
+    } else if (ch === '{' && html[i + 1] === '{' && !inSingle && !inDouble && !inBacktick) {
+      inAngularExpr++;
+      i++;
+    } else if (ch === '}' && html[i + 1] === '}' && inAngularExpr > 0 && !inSingle && !inDouble && !inBacktick) {
+      inAngularExpr--;
+      i++;
+    } else if (ch === '>' && !inSingle && !inDouble && !inBacktick && inAngularExpr === 0) {
+      return i + 1;
+    }
+  }
+  return -1;
+}
+
+interface ParsedOpeningTag {
+  tagOpen: number;
+  tagClose: number;
+  fullTag: string;
+  tagName: string;
+  aveName?: string;
+  dataName?: string;
+  elementId?: string;
+  classes: string[];
+}
+
+function parseAllOpeningTags(html: string): ParsedOpeningTag[] {
+  const tags: ParsedOpeningTag[] = [];
+  const startRegex = /<([a-zA-Z0-9-]+)(?=[\s>/])/g;
+  let m: RegExpExecArray | null;
+
+  while ((m = startRegex.exec(html)) !== null) {
+    const tagOpen = m.index;
+    const tagName = m[1].toLowerCase();
+
+    // Skip closing tags, script, style
+    if (tagName.startsWith('/') || tagName === 'script' || tagName === 'style') {
+      continue;
+    }
+
+    const tagClose = findOpeningTagEnd(html, tagOpen);
+    if (tagClose === -1) continue;
+
+    const fullTag = html.slice(tagOpen, tagClose);
+
+    const aveNameM = /ave-name=["']([^"']+)["']/i.exec(fullTag);
+    const dataNameM = /data-name=["']([^"']+)["']/i.exec(fullTag);
+    const idM = /\bid=["']([^"']+)["']/i.exec(fullTag);
+    const classM = /\bclass=["']([^"']+)["']/i.exec(fullTag);
+
+    const classes = classM
+      ? classM[1].split(/\s+/).filter(c => c && !c.startsWith('ng-') && !c.startsWith('_ng'))
+      : [];
+
+    tags.push({
+      tagOpen,
+      tagClose,
+      fullTag,
+      tagName,
+      aveName: aveNameM ? aveNameM[1] : undefined,
+      dataName: dataNameM ? dataNameM[1] : undefined,
+      elementId: idM ? idM[1] : undefined,
+      classes
+    });
+  }
+  return tags;
+}
+
 function findElementTagInHtml(
   html: string,
   target: ElementTargetIdentifier
 ): { tagOpen: number; tagClose: number; fullTag: string } | null {
-  const searchPatterns: RegExp[] = [];
+  const allTags = parseAllOpeningTags(html);
+  if (allTags.length === 0) return null;
 
-  // Priority 1: ave-name
-  if (target.aveName) {
-    searchPatterns.push(new RegExp(`<[a-zA-Z0-9-]+[^>]*\\bave-name=["']${escapeRegex(target.aveName)}["'][^>]*>`, 'i'));
-  }
-  // Priority 2: data-name
-  if (target.dataName) {
-    searchPatterns.push(new RegExp(`<[a-zA-Z0-9-]+[^>]*\\bdata-name=["']${escapeRegex(target.dataName)}["'][^>]*>`, 'i'));
-  }
-  // Priority 3: element id
-  if (target.elementId) {
-    searchPatterns.push(new RegExp(`<[a-zA-Z0-9-]+[^>]*\\bid=["']${escapeRegex(target.elementId)}["'][^>]*>`, 'i'));
-  }
-  // Priority 4: primary class
-  if (target.className) {
-    const firstClass = target.className.split(/\s+/).find(c => c && !c.startsWith('ng-'));
-    if (firstClass) {
-      searchPatterns.push(new RegExp(`<[a-zA-Z0-9-]+[^>]*\\bclass=["'][^"']*\\b${escapeRegex(firstClass)}\\b[^"']*["'][^>]*>`, 'i'));
-    }
-  }
-  // Priority 5: tagName
-  if (target.tagName) {
-    searchPatterns.push(new RegExp(`<${escapeRegex(target.tagName)}\\b[^>]*>`, 'i'));
+  const targetClasses = (target.className || '')
+    .split(/\s+/)
+    .filter(c => c && !c.startsWith('ng-') && !c.startsWith('_ng'));
+
+  const candidates = [...(target.candidates || [])];
+  if (target.selector && !candidates.includes(target.selector)) {
+    candidates.push(target.selector);
   }
 
-  for (const pattern of searchPatterns) {
-    const match = pattern.exec(html);
-    if (match) {
-      const tagOpen = match.index;
-      const tagClose = tagOpen + match[0].length;
-      return { tagOpen, tagClose, fullTag: match[0] };
+  let bestMatch: ParsedOpeningTag | null = null;
+  let bestScore = 0;
+
+  for (const tag of allTags) {
+    let score = 0;
+
+    // 1. Exact ave-name match (Priority 1)
+    if (target.aveName && tag.aveName && target.aveName.toLowerCase() === tag.aveName.toLowerCase()) {
+      score += 100;
     }
+
+    // 2. Exact data-name match (Priority 2)
+    if (target.dataName && tag.dataName && target.dataName.toLowerCase() === tag.dataName.toLowerCase()) {
+      score += 90;
+    }
+
+    // 3. Exact element id match (Priority 3)
+    if (target.elementId && tag.elementId && target.elementId.toLowerCase() === tag.elementId.toLowerCase()) {
+      score += 80;
+    }
+
+    // 4. Candidate selector matching in full tag
+    for (const cand of candidates) {
+      if (cand.startsWith('.')) {
+        const cls = cand.slice(1);
+        if (tag.classes.includes(cls)) score += 40;
+      } else if (cand.startsWith('#')) {
+        const idVal = cand.slice(1);
+        if (tag.elementId === idVal) score += 60;
+      } else if (cand.includes('[ave-name=') && tag.aveName) {
+        if (cand.includes(tag.aveName)) score += 50;
+      }
+    }
+
+    // 5. Classes overlap
+    let classOverlap = 0;
+    for (const c of targetClasses) {
+      if (tag.classes.includes(c)) classOverlap++;
+    }
+    if (targetClasses.length > 0 && classOverlap > 0) {
+      score += (classOverlap / targetClasses.length) * 50;
+      if (classOverlap === targetClasses.length) {
+        score += 20; // Exact class set match bonus
+      }
+    }
+
+    // 6. TagName match
+    if (target.tagName && tag.tagName === target.tagName.toLowerCase()) {
+      score += 15;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = tag;
+    }
+  }
+
+  if (bestScore >= 15 && bestMatch) {
+    return {
+      tagOpen: bestMatch.tagOpen,
+      tagClose: bestMatch.tagClose,
+      fullTag: bestMatch.fullTag
+    };
   }
 
   return null;

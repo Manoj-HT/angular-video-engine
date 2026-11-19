@@ -236,149 +236,272 @@ export const COMMON_CSS_PROPERTIES: string[] = [
               </div>
             </div>
 
-            <!-- Mode Banner: Static CSS vs Dynamic aveAnimate -->
-            <div
-              class="ave-mode-banner"
-              [class.mode-animate]="isKeyframeMode()"
-              [class.mode-static]="!isKeyframeMode()"
-            >
-              @if (isKeyframeMode()) {
-                <span class="ave-mode-icon">⚡</span>
-                <div class="ave-mode-text">
-                  <strong>Dynamic aveAnimate Keyframe</strong>
-                  <span>Frame Range: [{{ getInitialFrame() }} ➔ {{ frameService.frame() }}]</span>
-                </div>
-              } @else {
-                <span class="ave-mode-icon">🎨</span>
-                <div class="ave-mode-text">
-                  <strong>Static CSS Rule</strong>
-                  <span>Click Add to write to CSS. Scrub timeline to keyframe animate!</span>
-                </div>
-              }
+            <!-- Action Mode Selector Tabs: 2 Clear Buttons / Modes -->
+            <div class="ave-styler-tab-bar">
+              <button
+                type="button"
+                class="ave-mode-tab"
+                [class.active]="activeStylerTab() === 'animate'"
+                (click)="activeStylerTab.set('animate')"
+              >
+                <span class="ave-tab-icon">⚡</span>
+                <span class="ave-tab-title">Animate Dynamic Range</span>
+              </button>
+              <button
+                type="button"
+                class="ave-mode-tab"
+                [class.active]="activeStylerTab() === 'css'"
+                (click)="activeStylerTab.set('css')"
+              >
+                <span class="ave-tab-icon">🎨</span>
+                <span class="ave-tab-title">Permanent CSS</span>
+              </button>
             </div>
 
-            <!-- Style Selector: Dropdown + Input + Add Button -->
+            <!-- Styler Panel -->
             <div class="ave-styler-panel">
+              <!-- Header / Property Selection -->
               <div class="ave-styler-subhead">
-                <span>Add Property / Keyframe</span>
-                <span class="ave-frame-subtext">Current Frame: {{ frameService.frame() }}</span>
+                <span>Target CSS / Animation Property:</span>
+                <span class="ave-frame-subtext">Playhead: Frame {{ frameService.frame() }}</span>
               </div>
 
-              <!-- Side-by-Side: Searchable Dropdown + Input Box + Add Button -->
-              <div class="ave-styler-input-row">
-                <!-- Searchable CSS Property Dropdown -->
-                <div class="ave-searchable-dropdown-wrap">
-                  <div
-                    class="ave-dropdown-trigger"
-                    (click)="toggleDropdown()"
-                  >
-                    <input
-                      type="text"
-                      class="ave-dropdown-search-input"
-                      placeholder="Property (e.g. opacity)..."
-                      [value]="propertySearch() || selectedProperty()"
-                      (input)="onPropSearchInput($event)"
-                      (focus)="isDropdownOpen.set(true)"
-                      (keydown.escape)="isDropdownOpen.set(false)"
-                    />
-                    <span class="ave-dropdown-arrow">{{ isDropdownOpen() ? '▲' : '▼' }}</span>
-                  </div>
-
-                  @if (isDropdownOpen()) {
-                    <div class="ave-dropdown-menu">
-                      @for (prop of filteredCssProperties(); track prop) {
-                        <div
-                          class="ave-dropdown-item"
-                          [class.active]="selectedProperty() === prop"
-                          (click)="selectProperty(prop)"
-                        >
-                          <span class="ave-item-prop">{{ prop }}</span>
-                          @if (isTransformProp(prop)) {
-                            <span class="ave-prop-type-badge">animate</span>
-                          }
-                        </div>
-                      }
-                      @if (filteredCssProperties().length === 0) {
-                        <div class="ave-dropdown-empty">Custom: "{{ propertySearch() }}"</div>
-                      }
-                    </div>
-                  }
-                </div>
-
-                <!-- Value Input Box -->
-                <div class="ave-value-input-wrap">
+              <!-- Searchable CSS Property Dropdown -->
+              <div class="ave-searchable-dropdown-wrap">
+                <div
+                  class="ave-dropdown-trigger"
+                  (click)="toggleDropdown()"
+                >
                   <input
                     type="text"
-                    class="ave-value-input"
-                    placeholder="Value (e.g. 0, 40px, #00d2ff)"
-                    [value]="propertyValue()"
-                    (input)="propertyValue.set($any($event.target).value)"
-                    (keydown.enter)="onAddClick()"
+                    class="ave-dropdown-search-input"
+                    placeholder="Search property (e.g. opacity, translateY)..."
+                    [value]="propertySearch() || selectedProperty()"
+                    (input)="onPropSearchInput($event)"
+                    (focus)="isDropdownOpen.set(true)"
+                    (keydown.escape)="isDropdownOpen.set(false)"
                   />
+                  <span class="ave-dropdown-arrow">{{ isDropdownOpen() ? '▲' : '▼' }}</span>
                 </div>
 
-                <!-- Add Button -->
-                <button
-                  type="button"
-                  class="ave-btn-add"
-                  [class.animate-glow]="isKeyframeMode()"
-                  (click)="onAddClick()"
-                  [disabled]="!selectedProperty() || !propertyValue().trim() || isSaving()"
-                  title="Add style or keyframe animate directive"
-                >
-                  @if (isSaving()) {
-                    <span>●</span>
-                  } @else {
-                    Add
-                  }
-                </button>
-              </div>
-
-              <!-- Value Quick Presets -->
-              <div class="ave-presets-row">
-                <span class="ave-presets-label">Presets:</span>
-                @for (preset of getPropertyPresets(selectedProperty()); track preset) {
-                  <button
-                    type="button"
-                    class="ave-preset-btn"
-                    (click)="propertyValue.set(preset)"
-                  >
-                    {{ preset }}
-                  </button>
+                @if (isDropdownOpen()) {
+                  <div class="ave-dropdown-menu">
+                    @for (prop of filteredCssProperties(); track prop) {
+                      <div
+                        class="ave-dropdown-item"
+                        [class.active]="selectedProperty() === prop"
+                        (click)="selectProperty(prop)"
+                      >
+                        <span class="ave-item-prop">{{ prop }}</span>
+                        @if (isTransformProp(prop)) {
+                          <span class="ave-prop-type-badge">animate</span>
+                        }
+                      </div>
+                    }
+                    @if (filteredCssProperties().length === 0) {
+                      <div class="ave-dropdown-empty">Custom: "{{ propertySearch() }}"</div>
+                    }
+                  </div>
                 }
               </div>
 
-              <!-- Spring Physics Option (when animating) -->
-              @if (isKeyframeMode() || selectedNode()?.hasAveAnimate) {
-                <div class="ave-spring-row">
-                  <label class="ave-checkbox-label">
-                    <input
-                      type="checkbox"
-                      [checked]="useSpring()"
-                      (change)="useSpring.set($any($event.target).checked)"
-                    />
-                    <span>Use Spring Physics (Natural Damping)</span>
-                  </label>
-                  @if (useSpring()) {
-                    <div class="ave-spring-inputs">
-                      <span class="ave-spring-sub">Damp:</span>
+              <!-- ================= SECTION A: DYNAMIC RANGE ANIMATE ================= -->
+              @if (activeStylerTab() === 'animate') {
+                <div class="ave-anim-builder-card">
+                  <!-- Frame Range Config -->
+                  <div class="ave-range-picker-row">
+                    <div class="ave-range-col">
+                      <label class="ave-field-label">From Frame</label>
                       <input
                         type="number"
-                        class="ave-mini-num"
-                        [value]="springDamping()"
-                        (input)="springDamping.set(+$any($event.target).value)"
-                      />
-                      <span class="ave-spring-sub">Stiff:</span>
-                      <input
-                        type="number"
-                        class="ave-mini-num"
-                        [value]="springStiffness()"
-                        (input)="springStiffness.set(+$any($event.target).value)"
+                        class="ave-range-input"
+                        [value]="animStartFrame()"
+                        (input)="animStartFrame.set(+$any($event.target).value)"
+                        min="0"
                       />
                     </div>
+
+                    <div class="ave-range-arrow">➔</div>
+
+                    <div class="ave-range-col">
+                      <label class="ave-field-label">To Frame</label>
+                      <input
+                        type="number"
+                        class="ave-range-input"
+                        [value]="animEndFrame()"
+                        (input)="animEndFrame.set(+$any($event.target).value)"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Quick Range Presets Chips -->
+                  <div class="ave-range-presets-row">
+                    <button type="button" class="ave-chip-btn" (click)="setRangePreset(0, 30)">[0 ➔ 30]</button>
+                    <button type="button" class="ave-chip-btn" (click)="setRangePreset(0, 60)">[0 ➔ 60]</button>
+                    <button type="button" class="ave-chip-btn" (click)="setRelativeEnd(30)">
+                      [Frame {{ frameService.frame() }} ➔ +30f]
+                    </button>
+                    <button type="button" class="ave-chip-btn" (click)="setStartToCurrent()">Start=Now</button>
+                    <button type="button" class="ave-chip-btn" (click)="setEndToCurrent()">End=Now</button>
+                  </div>
+
+                  <!-- Value Tween Transition (From -> To) -->
+                  <div class="ave-range-picker-row" style="margin-top: 6px;">
+                    <div class="ave-range-col">
+                      <label class="ave-field-label">From Value</label>
+                      <input
+                        type="text"
+                        class="ave-range-input"
+                        placeholder="e.g. 0"
+                        [value]="animFromValue()"
+                        (input)="animFromValue.set($any($event.target).value)"
+                      />
+                    </div>
+
+                    <div class="ave-range-arrow">➔</div>
+
+                    <div class="ave-range-col">
+                      <label class="ave-field-label">To Value</label>
+                      <input
+                        type="text"
+                        class="ave-range-input"
+                        placeholder="e.g. 1"
+                        [value]="animToValue()"
+                        (input)="animToValue.set($any($event.target).value)"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Quick Tween Presets for Property -->
+                  @if (getTweenPresets(selectedProperty()).length > 0) {
+                    <div class="ave-range-presets-row">
+                      @for (p of getTweenPresets(selectedProperty()); track p.label) {
+                        <button
+                          type="button"
+                          class="ave-chip-btn"
+                          (click)="setTweenPreset(p.from, p.to)"
+                        >
+                          {{ p.label }}
+                        </button>
+                      }
+                    </div>
                   }
+
+                  <!-- Spring Physics Option -->
+                  <div class="ave-spring-row">
+                    <label class="ave-checkbox-label">
+                      <input
+                        type="checkbox"
+                        [checked]="useSpring()"
+                        (change)="useSpring.set($any($event.target).checked)"
+                      />
+                      <span>Use Natural Spring Physics</span>
+                    </label>
+                    @if (useSpring()) {
+                      <div class="ave-spring-inputs">
+                        <span class="ave-spring-sub">Damp:</span>
+                        <input
+                          type="number"
+                          class="ave-mini-num"
+                          [value]="springDamping()"
+                          (input)="springDamping.set(+$any($event.target).value)"
+                        />
+                        <span class="ave-spring-sub">Stiff:</span>
+                        <input
+                          type="number"
+                          class="ave-mini-num"
+                          [value]="springStiffness()"
+                          (input)="springStiffness.set(+$any($event.target).value)"
+                        />
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Primary Button 1: Add as Dynamic Range -->
+                  <button
+                    type="button"
+                    class="ave-btn-main-action ave-btn-action-animate"
+                    (click)="addDynamicRangeAnimation()"
+                    [disabled]="!selectedProperty() || isSaving()"
+                    title="Write aveAnimate dynamic frame range directly to template"
+                  >
+                    @if (isSaving()) {
+                      <span>Saving...</span>
+                    } @else {
+                      <span>⚡ Add as Dynamic Range to Animate</span>
+                    }
+                  </button>
                 </div>
               }
+
+              <!-- ================= SECTION B: STATIC CSS ================= -->
+              @if (activeStylerTab() === 'css') {
+                <div class="ave-static-css-card">
+                  <div class="ave-value-input-wrap">
+                    <label class="ave-field-label">CSS Value</label>
+                    <input
+                      type="text"
+                      class="ave-value-input"
+                      placeholder="Value (e.g. 0, 40px, #00d2ff)"
+                      [value]="propertyValue()"
+                      (input)="propertyValue.set($any($event.target).value)"
+                      (keydown.enter)="savePermanentlyAsCss()"
+                    />
+                  </div>
+
+                  <!-- Value Quick Presets -->
+                  <div class="ave-presets-row">
+                    <span class="ave-presets-label">Presets:</span>
+                    @for (preset of getPropertyPresets(selectedProperty()); track preset) {
+                      <button
+                        type="button"
+                        class="ave-preset-btn"
+                        (click)="propertyValue.set(preset)"
+                      >
+                        {{ preset }}
+                      </button>
+                    }
+                  </div>
+
+                  <!-- Primary Button 2: Add Permanently as CSS -->
+                  <button
+                    type="button"
+                    class="ave-btn-main-action ave-btn-action-css"
+                    (click)="savePermanentlyAsCss()"
+                    [disabled]="!selectedProperty() || !propertyValue().trim() || isSaving()"
+                    title="Write permanently to component CSS stylesheet"
+                  >
+                    @if (isSaving()) {
+                      <span>Saving...</span>
+                    } @else {
+                      <span>🎨 Add Permanently as CSS</span>
+                    }
+                  </button>
+                </div>
+              }
+
+              <!-- Direct Dual Buttons Row: Always available for quick 1-click execution -->
+              <div class="ave-dual-quick-row">
+                <button
+                  type="button"
+                  class="ave-dual-btn ave-dual-btn-css"
+                  (click)="savePermanentlyAsCss()"
+                  [disabled]="!selectedProperty() || isSaving()"
+                  title="Save directly into CSS file"
+                >
+                  🎨 Add as CSS
+                </button>
+                <button
+                  type="button"
+                  class="ave-dual-btn ave-dual-btn-anim"
+                  (click)="activeStylerTab.set('animate'); addDynamicRangeAnimation()"
+                  [disabled]="!selectedProperty() || isSaving()"
+                  title="Write aveAnimate dynamic frame range into template"
+                >
+                  ⚡ Add as Dynamic Range
+                </button>
+              </div>
 
               <!-- Status Toast Notification -->
               @if (statusMessage(); as status) {
@@ -964,6 +1087,212 @@ export const COMMON_CSS_PROPERTIES: string[] = [
       color: #00d2ff;
     }
 
+    /* Tab bar */
+    .ave-styler-tab-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+
+    .ave-mode-tab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 8px;
+      background: #131726;
+      border: 1px solid #232a45;
+      border-radius: 5px;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #1a2035;
+        color: #f1f5f9;
+        border-color: #333d66;
+      }
+
+      &.active {
+        background: linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(124, 77, 255, 0.2));
+        border-color: #38bdf8;
+        color: #38bdf8;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
+      }
+    }
+
+    .ave-tab-icon {
+      font-size: 12px;
+    }
+
+    /* Cards */
+    .ave-anim-builder-card,
+    .ave-static-css-card {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      background: #0f121d;
+      border: 1px solid #20263d;
+      border-radius: 5px;
+      padding: 8px;
+    }
+
+    .ave-range-picker-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ave-range-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .ave-range-arrow {
+      color: #facc15;
+      font-size: 11px;
+      font-weight: 700;
+      padding-top: 14px;
+    }
+
+    .ave-field-label {
+      font-size: 9px;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .ave-range-input {
+      width: 100%;
+      background: #161a29;
+      border: 1px solid #2a3352;
+      border-radius: 4px;
+      color: #f8fafc;
+      font-size: 11px;
+      font-family: monospace;
+      padding: 4px 6px;
+      outline: none;
+
+      &:focus {
+        border-color: #38bdf8;
+      }
+    }
+
+    .ave-range-presets-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .ave-chip-btn {
+      background: #1a2034;
+      border: 1px solid #293354;
+      color: #94a3b8;
+      font-size: 9px;
+      font-family: monospace;
+      padding: 2px 5px;
+      border-radius: 3px;
+      cursor: pointer;
+
+      &:hover {
+        background: #263152;
+        color: #f8fafc;
+        border-color: #3b82f6;
+      }
+    }
+
+    .ave-btn-main-action {
+      width: 100%;
+      padding: 7px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+      margin-top: 2px;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .ave-btn-action-animate {
+      background: linear-gradient(135deg, #0284c7, #7c4dff);
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(124, 77, 255, 0.25);
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #0369a1, #6d28d9);
+        box-shadow: 0 4px 14px rgba(124, 77, 255, 0.4);
+      }
+    }
+
+    .ave-btn-action-css {
+      background: #0284c7;
+      color: #ffffff;
+
+      &:hover:not(:disabled) {
+        background: #0369a1;
+      }
+    }
+
+    /* Dual Quick Row */
+    .ave-dual-quick-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+      padding-top: 6px;
+      border-top: 1px dashed #232a44;
+    }
+
+    .ave-dual-btn {
+      flex: 1;
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .ave-dual-btn-css {
+      background: #1e253c;
+      border: 1px solid #323d63;
+      color: #38bdf8;
+
+      &:hover:not(:disabled) {
+        background: #252f4c;
+        border-color: #38bdf8;
+      }
+    }
+
+    .ave-dual-btn-anim {
+      background: rgba(124, 77, 255, 0.18);
+      border: 1px solid rgba(124, 77, 255, 0.4);
+      color: #c084fc;
+
+      &:hover:not(:disabled) {
+        background: rgba(124, 77, 255, 0.3);
+        border-color: #a855f7;
+      }
+    }
+
     /* Styler Input Row: Dropdown + Value Input + Add Button */
     .ave-styler-input-row {
       display: flex;
@@ -1474,6 +1803,15 @@ export class AveVisualAnimatorComponent implements OnInit, OnDestroy {
   readonly selectedProperty = signal<string>('opacity');
   readonly propertyValue = signal<string>('');
 
+  // Active Mode Tab ('animate' | 'css')
+  readonly activeStylerTab = signal<'animate' | 'css'>('animate');
+
+  // Dynamic Range Animation Inputs
+  readonly animStartFrame = signal<number>(0);
+  readonly animEndFrame = signal<number>(30);
+  readonly animFromValue = signal<string>('0');
+  readonly animToValue = signal<string>('1');
+
   // Spring physics options
   readonly useSpring = signal<boolean>(true);
   readonly springDamping = signal<number>(14);
@@ -1661,10 +1999,15 @@ export class AveVisualAnimatorComponent implements OnInit, OnDestroy {
     this.selectedNode.set(node);
     this.highlightElement(node.elementRef);
     this.inspectElement(node);
+
+    // Auto-sync frame range with playhead
+    const cur = this.frameService.frame();
+    this.animStartFrame.set(cur);
+    this.animEndFrame.set(cur + 30);
   }
 
   async inspectElement(node: DomTreeNode): Promise<void> {
-    const compId = this.state.activeComposition()?.id || 'DirectivesShowcase';
+    const compId = this.state.activeCompositionId() || this.state.activeComposition()?.id || 'DirectivesShowcase';
     try {
       const params = new URLSearchParams({
         compositionId: compId,
@@ -1682,6 +2025,12 @@ export class AveVisualAnimatorComponent implements OnInit, OnDestroy {
         this.activeMatchedSelector.set(data.matchedSelector || node.selector || '');
         this.existingAnimateConfig.set(data.animateConfig || null);
         this.existingCssRules.set(data.cssRules || {});
+
+        // If active animation exists on element, reflect its range in builder
+        if (data.animateConfig?.range && Array.isArray(data.animateConfig.range)) {
+          this.animStartFrame.set(data.animateConfig.range[0]);
+          this.animEndFrame.set(data.animateConfig.range[1]);
+        }
       }
     } catch (err) {
       console.error('Failed to inspect element styles:', err);
@@ -1711,10 +2060,15 @@ export class AveVisualAnimatorComponent implements OnInit, OnDestroy {
     this.propertySearch.set(prop);
     this.isDropdownOpen.set(false);
 
-    // Default value if empty
-    if (!this.propertyValue()) {
-      const presets = this.getPropertyPresets(prop);
-      if (presets.length > 0) this.propertyValue.set(presets[0]);
+    // Default value for CSS
+    const presets = this.getPropertyPresets(prop);
+    if (presets.length > 0) this.propertyValue.set(presets[0]);
+
+    // Default tween values for Dynamic Range
+    const tweenPresets = this.getTweenPresets(prop);
+    if (tweenPresets.length > 0) {
+      this.animFromValue.set(tweenPresets[0].from);
+      this.animToValue.set(tweenPresets[0].to);
     }
   }
 
@@ -1736,108 +2090,182 @@ export class AveVisualAnimatorComponent implements OnInit, OnDestroy {
     return ['0', '1', 'auto'];
   }
 
+  getTweenPresets(prop: string): { label: string; from: string; to: string }[] {
+    const p = prop.toLowerCase();
+    if (p === 'opacity') {
+      return [
+        { label: 'Fade In (0 ➔ 1)', from: '0', to: '1' },
+        { label: 'Fade Out (1 ➔ 0)', from: '1', to: '0' }
+      ];
+    }
+    if (p === 'translatey') {
+      return [
+        { label: 'Slide Up (40px ➔ 0)', from: '40px', to: '0px' },
+        { label: 'Slide Down (-40px ➔ 0)', from: '-40px', to: '0px' }
+      ];
+    }
+    if (p === 'translatex') {
+      return [
+        { label: 'Slide Right (-50px ➔ 0)', from: '-50px', to: '0px' },
+        { label: 'Slide Left (50px ➔ 0)', from: '50px', to: '0px' }
+      ];
+    }
+    if (p === 'scale') {
+      return [
+        { label: 'Pop In (0.8 ➔ 1)', from: '0.8', to: '1' },
+        { label: 'Zoom In (0 ➔ 1)', from: '0', to: '1' },
+        { label: 'Grow (1 ➔ 1.15)', from: '1', to: '1.15' }
+      ];
+    }
+    if (p === 'rotate') {
+      return [
+        { label: 'Spin (-15deg ➔ 0)', from: '-15deg', to: '0deg' },
+        { label: 'Full Spin (0 ➔ 360deg)', from: '0deg', to: '360deg' }
+      ];
+    }
+    return [
+      { label: '0 ➔ 1', from: '0', to: '1' },
+      { label: '1 ➔ 0', from: '1', to: '0' }
+    ];
+  }
+
+  setRangePreset(start: number, end: number): void {
+    this.animStartFrame.set(start);
+    this.animEndFrame.set(end);
+  }
+
+  setStartToCurrent(): void {
+    this.animStartFrame.set(this.frameService.frame());
+  }
+
+  setEndToCurrent(): void {
+    this.animEndFrame.set(this.frameService.frame());
+  }
+
+  setRelativeEnd(offset: number): void {
+    const cur = this.frameService.frame();
+    this.animStartFrame.set(cur);
+    this.animEndFrame.set(cur + offset);
+  }
+
+  setTweenPreset(from: string, to: string): void {
+    this.animFromValue.set(from);
+    this.animToValue.set(to);
+  }
+
   getInitialFrame(): number {
     const prop = this.selectedProperty();
     const mem = this.initialKeyframeState.get(prop);
     return mem ? mem.frame : 0;
   }
 
-  // ================= CORE ACTION: ADD BUTTON =================
-  async onAddClick(): Promise<void> {
+  // ================= BUTTON 1: SAVE PERMANENTLY AS CSS =================
+  async savePermanentlyAsCss(): Promise<void> {
     const node = this.selectedNode();
     const prop = this.selectedProperty().trim();
-    const val = this.propertyValue().trim();
-    const currentF = this.frameService.frame();
-    const compId = this.state.activeComposition()?.id || 'DirectivesShowcase';
+    const val = (this.propertyValue() || this.animToValue() || '0').trim();
+    const compId = this.state.activeCompositionId() || this.state.activeComposition()?.id || 'DirectivesShowcase';
 
-    if (!node || !prop || !val) return;
+    if (!node || !prop || !val) {
+      this.showStatus('Please specify a property and value', 'error');
+      return;
+    }
 
     this.isSaving.set(true);
+    try {
+      const res = await fetch('/api/styler/css', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          compositionId: compId,
+          selector: this.activeMatchedSelector() || node.selector,
+          property: prop,
+          value: val,
+          candidates: this.getNodeCandidateSelectors(node)
+        })
+      });
 
-    const mem = this.initialKeyframeState.get(prop);
-
-    // CASE A: Keyframe Mode (user changed frame since first staging)
-    if (mem && mem.frame !== currentF) {
-      const startFrame = Math.min(mem.frame, currentF);
-      const endFrame = Math.max(mem.frame, currentF);
-      const fromVal = mem.frame <= currentF ? mem.value : val;
-      const toVal = mem.frame <= currentF ? val : mem.value;
-
-      try {
-        const res = await fetch('/api/styler/animate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            compositionId: compId,
-            target: {
-              aveName: node.aveName,
-              dataName: node.dataName,
-              className: node.className,
-              tagName: node.tagName,
-              elementId: node.elementId,
-              selector: node.selector
-            },
-            config: {
-              range: [startFrame, endFrame],
-              property: prop,
-              fromValue: fromVal,
-              toValue: toVal,
-              spring: this.useSpring()
-                ? { damping: this.springDamping(), stiffness: this.springStiffness() }
-                : false
-            },
-            removeCssProp: prop // Remove from CSS so aveAnimate takes over!
-          })
-        });
-
-        const data = await res.json();
-        if (data.success) {
-          this.showStatus(`✓ Wrote [aveAnimate] [${startFrame}, ${endFrame}] for ${prop}`, 'success');
-          // Update live DOM style immediately
-          this.applyLiveStyle(node.elementRef, prop, toVal);
-          // Refresh state
-          node.hasAveAnimate = true;
-          this.initialKeyframeState.delete(prop);
-          await this.inspectElement(node);
-        } else {
-          this.showStatus(data.error || 'Failed to write aveAnimate', 'error');
-        }
-      } catch (err: any) {
-        this.showStatus(err.message || 'Error writing aveAnimate', 'error');
-      } finally {
-        this.isSaving.set(false);
+      const data = await res.json();
+      if (data.success) {
+        this.showStatus(`✓ Saved ${prop}: ${val} permanently to CSS`, 'success');
+        this.applyLiveStyle(node.elementRef, prop, val);
+        await this.inspectElement(node);
+      } else {
+        this.showStatus(data.error || 'Failed to save CSS property', 'error');
       }
-    } else {
-      // CASE B: Static CSS Mode (First addition at current frame)
-      try {
-        const res = await fetch('/api/styler/css', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            compositionId: compId,
-            selector: this.activeMatchedSelector() || node.selector,
-            property: prop,
-            value: val,
+    } catch (err: any) {
+      this.showStatus(err.message || 'Error writing CSS', 'error');
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
+  // ================= BUTTON 2: ADD DYNAMIC RANGE TO ANIMATE =================
+  async addDynamicRangeAnimation(): Promise<void> {
+    const node = this.selectedNode();
+    const prop = this.selectedProperty().trim();
+    const fromVal = this.animFromValue().trim();
+    const toVal = (this.animToValue() || this.propertyValue() || '1').trim();
+    const startF = this.animStartFrame();
+    const endF = this.animEndFrame();
+    const compId = this.state.activeCompositionId() || this.state.activeComposition()?.id || 'DirectivesShowcase';
+
+    if (!node || !prop) {
+      this.showStatus('Please select an element and property', 'error');
+      return;
+    }
+
+    this.isSaving.set(true);
+    try {
+      const res = await fetch('/api/styler/animate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          compositionId: compId,
+          target: {
+            aveName: node.aveName,
+            dataName: node.dataName,
+            className: node.className,
+            tagName: node.tagName,
+            elementId: node.elementId,
+            selector: node.selector,
             candidates: this.getNodeCandidateSelectors(node)
-          })
-        });
+          },
+          config: {
+            range: [startF, endF],
+            property: prop,
+            fromValue: fromVal || '0',
+            toValue: toVal,
+            spring: this.useSpring()
+              ? { damping: this.springDamping(), stiffness: this.springStiffness() }
+              : false
+          },
+          removeCssProp: prop // Remove from CSS so aveAnimate takes over!
+        })
+      });
 
-        const data = await res.json();
-        if (data.success) {
-          // Record initial keyframe memory
-          this.initialKeyframeState.set(prop, { frame: currentF, value: val });
-          this.showStatus(`✓ Wrote ${prop}: ${val} to CSS (Scrub frame to animate!)`, 'info');
-          // Apply to live DOM
-          this.applyLiveStyle(node.elementRef, prop, val);
-          await this.inspectElement(node);
-        } else {
-          this.showStatus(data.error || 'Failed to write CSS property', 'error');
-        }
-      } catch (err: any) {
-        this.showStatus(err.message || 'Error writing CSS', 'error');
-      } finally {
-        this.isSaving.set(false);
+      const data = await res.json();
+      if (data.success) {
+        this.showStatus(`✓ Wrote [aveAnimate] [${startF}, ${endF}] for ${prop}`, 'success');
+        this.applyLiveStyle(node.elementRef, prop, toVal);
+        node.hasAveAnimate = true;
+        await this.inspectElement(node);
+      } else {
+        this.showStatus(data.error || 'Failed to write aveAnimate', 'error');
       }
+    } catch (err: any) {
+      this.showStatus(err.message || 'Error writing aveAnimate', 'error');
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
+  // Legacy onAddClick delegate
+  async onAddClick(): Promise<void> {
+    if (this.activeStylerTab() === 'animate') {
+      await this.addDynamicRangeAnimation();
+    } else {
+      await this.savePermanentlyAsCss();
     }
   }
 
